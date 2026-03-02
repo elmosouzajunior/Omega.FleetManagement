@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36811.4
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Omega.FleetManagement.Domain", "Omega.FleetManagement.Domain\Omega.FleetManagement.Domain.csproj", "{9AFF523D-A1A0-4222-AB26-851910B4DF58}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Omega.FleetManagement.Tests", "Omega.FleetManagement.Tests\Omega.FleetManagement.Tests.csproj", "{FA5AC018-12E8-4859-A0B3-D1C098EF4E8E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Omega.FleetManagement.API", "Omega.FleetManagement.API\Omega.FleetManagement.API.csproj", "{1AC3C7BC-1901-F294-1E33-E6D992A791FA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Omega.FleetManagement.Infrastructure", "Omega.FleetManagement.Infrastructure\Omega.FleetManagement.Infrastructure.csproj", "{FC8BB0B3-73DC-A03D-505A-7126C690C758}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Omega.FleetManagement.Application", "Omega.FleetManagement.Application\Omega.FleetManagement.Application.csproj", "{1DAB136D-6EEF-D394-A55C-FB2827259DC2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9AFF523D-A1A0-4222-AB26-851910B4DF58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9AFF523D-A1A0-4222-AB26-851910B4DF58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9AFF523D-A1A0-4222-AB26-851910B4DF58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9AFF523D-A1A0-4222-AB26-851910B4DF58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA5AC018-12E8-4859-A0B3-D1C098EF4E8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA5AC018-12E8-4859-A0B3-D1C098EF4E8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA5AC018-12E8-4859-A0B3-D1C098EF4E8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA5AC018-12E8-4859-A0B3-D1C098EF4E8E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1AC3C7BC-1901-F294-1E33-E6D992A791FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1AC3C7BC-1901-F294-1E33-E6D992A791FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1AC3C7BC-1901-F294-1E33-E6D992A791FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1AC3C7BC-1901-F294-1E33-E6D992A791FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC8BB0B3-73DC-A03D-505A-7126C690C758}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC8BB0B3-73DC-A03D-505A-7126C690C758}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC8BB0B3-73DC-A03D-505A-7126C690C758}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC8BB0B3-73DC-A03D-505A-7126C690C758}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DAB136D-6EEF-D394-A55C-FB2827259DC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DAB136D-6EEF-D394-A55C-FB2827259DC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DAB136D-6EEF-D394-A55C-FB2827259DC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DAB136D-6EEF-D394-A55C-FB2827259DC2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DFE52A2B-1066-4C54-B21F-8C1D972EA37D}
+	EndGlobalSection
+EndGlobal

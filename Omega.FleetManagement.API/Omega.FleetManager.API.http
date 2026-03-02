@@ -1,0 +1,6 @@
+@Omega.FleetManager.API_HostAddress = http://localhost:5167
+
+GET {{Omega.FleetManager.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="DTOs\NovaPasta\**" />
+    <EmbeddedResource Remove="DTOs\NovaPasta\**" />
+    <None Remove="DTOs\NovaPasta\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNet.Identity.Core" Version="2.2.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Omega.FleetManagement.Domain\Omega.FleetManagement.Domain.csproj" />
+    <ProjectReference Include="..\Omega.FleetManagement.Infrastructure\Omega.FleetManagement.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
