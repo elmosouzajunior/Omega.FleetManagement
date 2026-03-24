@@ -28,10 +28,15 @@ namespace Omega.FleetManagement.Domain.Entities
         // Método para atualizar comissão
         public void UpdateCommission(decimal newRate) => CommissionRate = newRate;
 
+        public void LinkUser(Guid userId)
+        {
+            UserId = userId;
+        }
+
         public void UpdateInfo(string name, string cpf, decimal comissionRate, bool isActive)
         {
             Name = name;
-            Cpf = cpf;
+            Cpf = cpf.Replace(".", "").Replace("-", "");
             CommissionRate = comissionRate;
             IsActive = isActive;
         }

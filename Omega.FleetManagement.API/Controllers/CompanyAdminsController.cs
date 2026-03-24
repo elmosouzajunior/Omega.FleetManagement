@@ -1,21 +1,21 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Omega.FleetManagement.Application.DTOs;
 using Omega.FleetManagement.Application.Interfaces;
-using Omega.FleetManagement.Application.Services;
 
 namespace Omega.FleetManagement.API.Controllers
 {
-    [ApiController]
     [Route("api/v1/companyAdmins")]
-    [Authorize(Roles = "Master")] // Garante que apenas o Super Admin acesse
-    public class CompanyAdminsController : ControllerBase
+    [Authorize(Roles = "Master")]
+    public class CompanyAdminsController : ApiControllerBase
     {
         private readonly ICompanyAdminAppService _companyAdminAppService;
+        private readonly ILogger<CompanyAdminsController> _logger;
 
-        public CompanyAdminsController(ICompanyAdminAppService companyAdminAppService)
+        public CompanyAdminsController(ICompanyAdminAppService companyAdminAppService, ILogger<CompanyAdminsController> logger)
         {
             _companyAdminAppService = companyAdminAppService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -59,8 +59,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "atualizar administrador da empresa");
             }
         }
 
@@ -81,8 +80,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "desativar administrador da empresa");
             }
         }
 
@@ -103,10 +101,8 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "reativar administrador da empresa");
             }
         }
-
     }
 }

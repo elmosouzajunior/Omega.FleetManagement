@@ -30,7 +30,14 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
         public async Task<Vehicle?> GetByIdAsync(Guid id)
         {
             return await _context.Vehicles.FindAsync(id);
-        }        
+        }
+
+        public async Task<Vehicle?> GetByIdAsync(Guid id, Guid companyId)
+        {
+            return await _context.Vehicles
+                .Include(v => v.Driver)
+                .FirstOrDefaultAsync(v => v.Id == id && v.CompanyId == companyId);
+        }
 
         public async Task<bool> ExistsByLicensePlateAndCompanyIdAsync(string licensePlate, Guid companyId)
         {
@@ -54,6 +61,12 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
         {
             return await _context.Vehicles
                 .AnyAsync(v => v.DriverId == driverId && v.Id != vehicleIdToIgnore);
+        }
+
+        public async Task<bool> IsDriverAllocatedAsync(Guid driverId, Guid companyId, Guid? vehicleIdToIgnore = null)
+        {
+            return await _context.Vehicles
+                .AnyAsync(v => v.CompanyId == companyId && v.DriverId == driverId && v.Id != vehicleIdToIgnore);
         }
     }
 }

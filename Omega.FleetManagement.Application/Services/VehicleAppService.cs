@@ -8,6 +8,7 @@ namespace Omega.FleetManagement.Application.Services
     {
         private readonly IVehicleService _vehicleDomainService;
         private readonly IVehicleRepository _vehicleRepository;
+        private readonly IDriverRepository _driverRepository;
         private readonly IExpenseRepository _expenseRepository;
         private readonly IExpenseTypeRepository _expenseTypeRepository;
         private readonly IUnitOfWork _uow;
@@ -15,12 +16,14 @@ namespace Omega.FleetManagement.Application.Services
         public VehicleAppService(
             IVehicleService vehicleDomainService,
             IVehicleRepository vehicleRepository,
+            IDriverRepository driverRepository,
             IExpenseRepository expenseRepository,
             IExpenseTypeRepository expenseTypeRepository,
             IUnitOfWork uow)
         {
             _vehicleDomainService = vehicleDomainService;
             _vehicleRepository = vehicleRepository;
+            _driverRepository = driverRepository;
             _expenseRepository = expenseRepository;
             _expenseTypeRepository = expenseTypeRepository;
             _uow = uow;
@@ -54,9 +57,9 @@ namespace Omega.FleetManagement.Application.Services
             )).ToList();
         }
 
-        public async Task<bool> AssignDriverAsync(Guid vehicleId, Guid? driverId)
+        public async Task<bool> AssignDriverAsync(Guid vehicleId, Guid? driverId, Guid companyId)
         {
-            var vehicle = await _vehicleRepository.GetByIdAsync(vehicleId);
+            var vehicle = await _vehicleRepository.GetByIdAsync(vehicleId, companyId);
             if (vehicle == null) return false;
 
             if (!driverId.HasValue)
@@ -65,7 +68,11 @@ namespace Omega.FleetManagement.Application.Services
                 return await _uow.CommitAsync();
             }
 
-            var isAlreadyAllocated = await _vehicleRepository.IsDriverAllocatedAsync(driverId.Value, vehicleId);
+            var driver = await _driverRepository.GetByIdAsync(driverId.Value, companyId);
+            if (driver == null)
+                throw new ArgumentException("Motorista não encontrado.");
+
+            var isAlreadyAllocated = await _vehicleRepository.IsDriverAllocatedAsync(driverId.Value, companyId, vehicleId);
             if (isAlreadyAllocated)
                 throw new Exception("Este motorista já possui um veículo vinculado.");
 
@@ -74,9 +81,9 @@ namespace Omega.FleetManagement.Application.Services
             return await _uow.CommitAsync();
         }
 
-        public async Task<bool> UpdateVehicleAsync(Guid id, EditVehicleRequest request)
+        public async Task<bool> UpdateVehicleAsync(Guid id, EditVehicleRequest request, Guid companyId)
         {
-            var vehicle = await _vehicleRepository.GetByIdAsync(id);
+            var vehicle = await _vehicleRepository.GetByIdAsync(id, companyId);
             if (vehicle == null) return false;
 
             vehicle.UpdateInfo(request.LicensePlate, request.Manufacturer ?? string.Empty, request.Color ?? string.Empty, request.IsActive);
@@ -88,7 +95,7 @@ namespace Omega.FleetManagement.Application.Services
 
         public async Task AddExpenseAsync(Guid vehicleId, CreateVehicleExpenseRequest request, Guid companyId)
         {
-            var vehicle = await _vehicleRepository.GetByIdAsync(vehicleId);
+            var vehicle = await _vehicleRepository.GetByIdAsync(vehicleId, companyId);
             if (vehicle == null || vehicle.CompanyId != companyId)
                 throw new ArgumentException("Veículo não encontrado.");
 

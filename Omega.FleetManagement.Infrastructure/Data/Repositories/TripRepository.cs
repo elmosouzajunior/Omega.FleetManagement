@@ -61,5 +61,13 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
                 t.Status == TripStatus.Open &&
                 (!tripIdToIgnore.HasValue || t.Id != tripIdToIgnore.Value));
         }
+
+        public async Task<bool> HasOpenTripByVehicleAsync(Guid vehicleId, Guid? tripIdToIgnore = null)
+        {
+            return await _context.Trips.AnyAsync(t =>
+                t.VehicleId == vehicleId &&
+                t.Status == TripStatus.Open &&
+                (!tripIdToIgnore.HasValue || t.Id != tripIdToIgnore.Value));
+        }
     }
 }

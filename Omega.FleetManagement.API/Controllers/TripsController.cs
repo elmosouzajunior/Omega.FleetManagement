@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Omega.FleetManagement.Application.DTOs;
 using Omega.FleetManagement.Application.Interfaces;
@@ -7,13 +7,15 @@ namespace Omega.FleetManagement.API.Controllers
 {
     [Authorize]
     [Route("api/v1/trips")]
-    [ApiController]
-    public class TripsController : ControllerBase
+    public class TripsController : ApiControllerBase
     {
         private readonly ITripAppService _tripAppService;
-        public TripsController(ITripAppService tripAppService)
+        private readonly ILogger<TripsController> _logger;
+
+        public TripsController(ITripAppService tripAppService, ILogger<TripsController> logger)
         {
             _tripAppService = tripAppService;
+            _logger = logger;
         }
 
         [HttpPost("open")]
@@ -28,7 +30,7 @@ namespace Omega.FleetManagement.API.Controllers
                 await _tripAppService.OpenTripAsync(dto, companyId);
                 return Ok(new { message = "Viagem aberta com sucesso!" });
             }
-            catch (InvalidOperationException ex) // Comum para regras de negócio violadas
+            catch (InvalidOperationException ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
@@ -38,14 +40,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                // Logue o erro no console do VS para você ver o que é
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-
-                return StatusCode(500, new
-                {
-                    message = "Erro interno no servidor",
-                    details = ex.Message
-                });
+                return InternalServerError(_logger, ex, "abrir viagem");
             }
         }
 
@@ -61,7 +56,6 @@ namespace Omega.FleetManagement.API.Controllers
 
                 if (trips == null || !trips.Any())
                 {
-                    // Retornamos 200 OK, mas com uma mensagem de aviso e lista vazia
                     return Ok(new
                     {
                         success = true,
@@ -79,13 +73,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                // Logue o erro no console do VS para você ver o que é
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new
-                {
-                    message = "Erro interno no servidor",
-                    details = ex.Message
-                });
+                return InternalServerError(_logger, ex, "listar viagens");
             }
         }
 
@@ -111,13 +99,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                // Logue o erro no console do VS para você ver o que é
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new
-                {
-                    message = "Erro interno no servidor",
-                    details = ex.Message
-                });
+                return InternalServerError(_logger, ex, "buscar viagem por id");
             }
         }
 
@@ -142,8 +124,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "reabrir viagem");
             }
         }
 
@@ -168,8 +149,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "finalizar viagem");
             }
         }
 
@@ -194,8 +174,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "cancelar viagem");
             }
         }
 
@@ -220,8 +199,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "adicionar despesa da viagem");
             }
         }
 
@@ -246,8 +224,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "atualizar despesa da viagem");
             }
         }
 
@@ -257,4 +234,3 @@ namespace Omega.FleetManagement.API.Controllers
         }
     }
 }
-

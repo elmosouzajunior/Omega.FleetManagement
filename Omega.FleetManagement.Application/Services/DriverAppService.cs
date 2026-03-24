@@ -29,18 +29,26 @@ namespace Omega.FleetManagement.Application.Services
             _uow = uow;
         }
 
+        private static string NormalizeCpf(string cpf) => cpf.Replace(".", "").Replace("-", "").Trim();
+
+        private static string BuildDriverEmail(string cpf) => $"{cpf}.driver@omegatransportes.com";
+
         public async Task<bool> CreateDriverAsync(CreateDriverRequest request, Guid companyId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
+                var normalizedCpf = NormalizeCpf(request.Cpf);
+
                 // 1. Criar usuário no Identity
                 var user = new ApplicationUser
                 {
-                    UserName = request.Cpf,
-                    Email = $"{request.Name}.driver@omegatransportes.com",
-                    Name = request.Name
+                    UserName = normalizedCpf,
+                    Email = BuildDriverEmail(normalizedCpf),
+                    Name = request.Name,
+                    CompanyId = companyId,
+                    IsActive = true
                 };
 
                 // 2. Salvar no Identity
@@ -53,15 +61,20 @@ namespace Omega.FleetManagement.Application.Services
                 }
 
                 // 3. Adicionar a Role de Driver
-                await _userManager.AddToRoleAsync(user, "Driver");
+                var roleResult = await _userManager.AddToRoleAsync(user, "Driver");
+                if (!roleResult.Succeeded)
+                {
+                    await transaction.RollbackAsync();
+                    return false;
+                }
 
                 // 4. Criar o Motorista no domínio
                 var driver = await _driverDomainService.CreateDriverAsync(
                     companyId,
                     request.Name,
-                    request.Cpf,
+                    normalizedCpf,
                     request.CommissionRate,
-                    Guid.NewGuid()
+                    user.Id
                 );
 
                 await _driverRepository.AddAsync(driver);
@@ -89,23 +102,35 @@ namespace Omega.FleetManagement.Application.Services
             )).ToList();
         }
 
-        public async Task<bool> UpdateDriverAsync(Guid id, EditDriverRequest request)
+        public async Task<bool> UpdateDriverAsync(Guid id, EditDriverRequest request, Guid companyId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
                 // 1. Buscar o motorista no domínio
-                var driver = await _driverRepository.GetByIdAsync(id);
+                var driver = await _driverRepository.GetByIdAsync(id, companyId);
                 if (driver == null) return false;
 
-                // 2. Buscar o usuário correspondente no Identity (pelo CPF antigo/UserName atual)
-                var user = await _userManager.FindByNameAsync(driver.Cpf);
+                var normalizedCpf = NormalizeCpf(request.Cpf);
+
+                // 2. Buscar o usuário correspondente no Identity pelo vínculo persistido
+                var user = await _userManager.FindByIdAsync(driver.UserId.ToString());
+                if (user == null)
+                {
+                    // Fallback para dados legados que foram salvos com UserId inconsistente
+                    user = await _userManager.FindByNameAsync(NormalizeCpf(driver.Cpf));
+                    if (user != null)
+                        driver.LinkUser(user.Id);
+                }
+
                 if (user != null)
                 {
-                    // Atualiza as informações de login
-                    user.UserName = request.Cpf; // CPF é o login
+                    user.UserName = normalizedCpf;
+                    user.Email = BuildDriverEmail(normalizedCpf);
                     user.Name = request.Name;
+                    user.CompanyId = companyId;
+                    user.IsActive = request.IsActive;
 
                     var identityResult = await _userManager.UpdateAsync(user);
 
@@ -117,7 +142,7 @@ namespace Omega.FleetManagement.Application.Services
                 }
 
                 // 3. Atualizar no banco de dados do domínio (Frota)
-                driver.UpdateInfo(request.Name, request.Cpf, request.CommissionRate, request.IsActive);
+                driver.UpdateInfo(request.Name, normalizedCpf, request.CommissionRate, request.IsActive);
 
                 await _driverRepository.UpdateAsync(driver);
                 await _uow.CommitAsync();

@@ -34,9 +34,27 @@ namespace Omega.FleetManagement.Domain.Services
                 throw new ArgumentException("O motorista já possui uma viagem em andamento e não pode abrir outra.");
             }
 
+            var vehicleHasOpenTrip = await _tripRepository.HasOpenTripByVehicleAsync(vehicleId);
+            if (vehicleHasOpenTrip)
+            {
+                throw new ArgumentException("O veículo já possui uma viagem em andamento e não pode abrir outra.");
+            }
+
             // 3. Busca o percentual de comissão do motorista para o "Snapshot"
-            var driver = await _driverRepository.GetByIdAsync(driverId);
+            var driver = await _driverRepository.GetByIdAsync(driverId, companyId);
             if (driver == null) throw new Exception("Motorista não encontrado.");
+            if (!driver.IsActive) throw new ArgumentException("O motorista informado está inativo.");
+
+            var vehicle = await _vehicleRepository.GetByIdAsync(vehicleId, companyId);
+            if (vehicle == null) throw new Exception("Veículo não encontrado.");
+            if (!vehicle.IsActive) throw new ArgumentException("O veículo informado está inativo.");
+            if (vehicle.DriverId.HasValue && vehicle.DriverId.Value != driverId)
+                throw new ArgumentException("O veículo está vinculado a outro motorista.");
+
+            if (loadingDate == default) throw new ArgumentException("Data de carregamento é obrigatória.");
+            if (loadingDate > DateTime.UtcNow.AddDays(1)) throw new ArgumentException("Data de carregamento não pode ser futura.");
+            if (startKm < 0) throw new ArgumentException("KM inicial não pode ser negativo.");
+            if (freightValue <= 0) throw new ArgumentException("Valor do frete deve ser maior que zero.");
             if (string.IsNullOrWhiteSpace(loadingLocation)) throw new ArgumentException("Local de carregamento é obrigatório.");
             if (string.IsNullOrWhiteSpace(unloadingLocation)) throw new ArgumentException("Destino é obrigatório na abertura da viagem.");
 
@@ -87,6 +105,10 @@ namespace Omega.FleetManagement.Domain.Services
 
             if (unloadingDate == default)
                 throw new ArgumentException("Data de encerramento é obrigatória.");
+            if (unloadingDate < trip.LoadingDate)
+                throw new ArgumentException("Data de encerramento não pode ser anterior à abertura da viagem.");
+            if (unloadingDate > DateTime.UtcNow.AddDays(1))
+                throw new ArgumentException("Data de encerramento não pode ser futura.");
 
             var destination = string.IsNullOrWhiteSpace(unloadingLocation)
                 ? (trip.UnloadingLocation ?? string.Empty).Trim()

@@ -1,20 +1,21 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Omega.FleetManagement.Application.DTOs;
 using Omega.FleetManagement.Application.Interfaces;
-using Omega.FleetManagement.Application.Services;
 
 namespace Omega.FleetManagement.API.Controllers
 {
     [Authorize]
     [Route("api/v1/vehicles")]
-    [ApiController]
-    public class VehiclesController : ControllerBase
+    public class VehiclesController : ApiControllerBase
     {
         private readonly IVehicleAppService _vehicleAppService;
-        public VehiclesController(IVehicleAppService vehicleAppService)
+        private readonly ILogger<VehiclesController> _logger;
+
+        public VehiclesController(IVehicleAppService vehicleAppService, ILogger<VehiclesController> logger)
         {
             _vehicleAppService = vehicleAppService;
+            _logger = logger;
         }
 
         [HttpPost("create")]
@@ -30,13 +31,11 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                // Aqui vai cair a sua regra de placas já cadastradas"
                 return BadRequest(new { success = false, message = ex.Message });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "criar veículo");
             }
         }
 
@@ -55,8 +54,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "listar veículos");
             }
         }
 
@@ -65,7 +63,10 @@ namespace Omega.FleetManagement.API.Controllers
         {
             try
             {
-                var success = await _vehicleAppService.AssignDriverAsync(id, request?.DriverId);
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
+                var success = await _vehicleAppService.AssignDriverAsync(id, request?.DriverId, companyId);
 
                 if (!success)
                     return NotFound(new { message = "Veículo não encontrado." });
@@ -76,9 +77,14 @@ namespace Omega.FleetManagement.API.Controllers
 
                 return Ok(new { message });
             }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Erro de negócio ao vincular motorista ao veículo");
+                return BadRequest(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return InternalServerError(_logger, ex, "vincular motorista ao veículo");
             }
         }
 
@@ -87,7 +93,13 @@ namespace Omega.FleetManagement.API.Controllers
         {
             try
             {
-                await _vehicleAppService.UpdateVehicleAsync(id, dto);
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
+                var updated = await _vehicleAppService.UpdateVehicleAsync(id, dto, companyId);
+                if (!updated)
+                    return NotFound(new { success = false, message = "Veículo não encontrado." });
+
                 return Ok(new { success = true, message = "Veículo atualizado com sucesso!" });
             }
             catch (ArgumentException ex)
@@ -96,8 +108,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "atualizar veículo");
             }
         }
 
@@ -118,8 +129,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "adicionar despesa do veículo");
             }
         }
 
@@ -129,4 +139,3 @@ namespace Omega.FleetManagement.API.Controllers
         }
     }
 }
-

@@ -10,5 +10,6 @@ namespace Omega.FleetManagement.Domain.Interfaces
         Task<IEnumerable<Trip>> GetByCompanyIdAsync(Guid companyId);
         Task<IEnumerable<Trip>> GetActiveTripsByDriverAsync(Guid driverId);
         Task<bool> HasOpenTripAsync(Guid driverId, Guid? tripIdToIgnore = null);
+        Task<bool> HasOpenTripByVehicleAsync(Guid vehicleId, Guid? tripIdToIgnore = null);
     }
 }

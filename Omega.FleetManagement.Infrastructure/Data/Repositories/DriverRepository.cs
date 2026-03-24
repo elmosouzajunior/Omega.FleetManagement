@@ -18,6 +18,11 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
             return await _context.Drivers.FindAsync(driverId);
         }
 
+        public async Task<Driver?> GetByIdAsync(Guid driverId, Guid companyId)
+        {
+            return await _context.Drivers.FirstOrDefaultAsync(d => d.Id == driverId && d.CompanyId == companyId);
+        }
+
         public async Task<Driver?> GetByCpfAsync(string cpf)
         {
             return await _context.Drivers.FirstOrDefaultAsync(d => d.Cpf == cpf);

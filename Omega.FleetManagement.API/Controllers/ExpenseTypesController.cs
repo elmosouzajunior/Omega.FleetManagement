@@ -6,14 +6,15 @@ using Omega.FleetManagement.Application.Interfaces;
 namespace Omega.FleetManagement.API.Controllers
 {
     [Route("api/v1/expense-types")]
-    [ApiController]
-    public class ExpenseTypesController : ControllerBase
+    public class ExpenseTypesController : ApiControllerBase
     {
         private readonly IExpenseTypeAppService _expenseTypeAppService;
+        private readonly ILogger<ExpenseTypesController> _logger;
 
-        public ExpenseTypesController(IExpenseTypeAppService expenseTypeAppService)
+        public ExpenseTypesController(IExpenseTypeAppService expenseTypeAppService, ILogger<ExpenseTypesController> logger)
         {
             _expenseTypeAppService = expenseTypeAppService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -36,8 +37,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Critico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "listar tipos de despesa");
             }
         }
 
@@ -56,8 +56,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Critico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "criar tipo de despesa");
             }
         }
 
@@ -79,8 +78,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Critico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "atualizar tipo de despesa");
             }
         }
 
@@ -106,8 +104,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Critico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "atualizar status do tipo de despesa");
             }
         }
     }

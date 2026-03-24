@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Omega.FleetManagement.Application.DTOs;
 using Omega.FleetManagement.Application.Interfaces;
@@ -7,13 +7,15 @@ namespace Omega.FleetManagement.API.Controllers
 {
     [Authorize]
     [Route("api/v1/drivers")]
-    [ApiController]
-    public class DriversController : ControllerBase
+    public class DriversController : ApiControllerBase
     {
         private readonly IDriverAppService _driverAppService;
-        public DriversController(IDriverAppService driverAppService)
+        private readonly ILogger<DriversController> _logger;
+
+        public DriversController(IDriverAppService driverAppService, ILogger<DriversController> logger)
         {
             _driverAppService = driverAppService;
+            _logger = logger;
         }
 
         [HttpPost("create")]
@@ -29,13 +31,11 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                // Aqui vai cair a sua regra de "CPF já cadastrado"
                 return BadRequest(new { success = false, message = ex.Message });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "criar motorista");
             }
         }
 
@@ -54,8 +54,7 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "listar motoristas");
             }
         }
 
@@ -64,18 +63,22 @@ namespace Omega.FleetManagement.API.Controllers
         {
             try
             {
-                await _driverAppService.UpdateDriverAsync(id, dto);
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
+                var updated = await _driverAppService.UpdateDriverAsync(id, dto, companyId);
+                if (!updated)
+                    return NotFound(new { success = false, message = "Motorista não encontrado." });
+
                 return Ok(new { success = true, message = "Motorista atualizado com sucesso!" });
             }
             catch (ArgumentException ex)
             {
-                // Aqui vai cair a sua regra de "CPF já cadastrado"
                 return BadRequest(new { success = false, message = ex.Message });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "atualizar motorista");
             }
         }
 
@@ -85,6 +88,3 @@ namespace Omega.FleetManagement.API.Controllers
         }
     }
 }
-
-        
-

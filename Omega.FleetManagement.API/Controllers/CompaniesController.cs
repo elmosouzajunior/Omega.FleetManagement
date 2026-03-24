@@ -1,20 +1,21 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Omega.FleetManagement.Application.DTOs;
 using Omega.FleetManagement.Application.Interfaces;
 
 namespace Omega.FleetManagement.API.Controllers
 {
-    [ApiController]
     [Route("api/v1/companies")]
-    [Authorize(Roles = "Master")] // Garante que apenas o Super Admin acesse
-    public class CompaniesController : ControllerBase
+    [Authorize(Roles = "Master")]
+    public class CompaniesController : ApiControllerBase
     {
         private readonly ICompanyAppService _companyAppService;
+        private readonly ILogger<CompaniesController> _logger;
 
-        public CompaniesController(ICompanyAppService companyAppService)
+        public CompaniesController(ICompanyAppService companyAppService, ILogger<CompaniesController> logger)
         {
             _companyAppService = companyAppService;
+            _logger = logger;
         }
 
         [HttpPost]
@@ -58,10 +59,8 @@ namespace Omega.FleetManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
-                return StatusCode(500, new { message = "Erro interno no servidor", details = ex.Message });
+                return InternalServerError(_logger, ex, "atualizar empresa");
             }
         }
-
     }
 }

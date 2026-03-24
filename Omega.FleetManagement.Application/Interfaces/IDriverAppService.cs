@@ -6,6 +6,6 @@ namespace Omega.FleetManagement.Application.Interfaces
     {
         Task<bool> CreateDriverAsync(CreateDriverRequest request, Guid companyId);
         Task<List<DriverResponse>> GetDriversByCompanyIdAsync(Guid companyId);
-        Task<bool> UpdateDriverAsync(Guid driverId, EditDriverRequest request);
+        Task<bool> UpdateDriverAsync(Guid driverId, EditDriverRequest request, Guid companyId);
     }
 }
