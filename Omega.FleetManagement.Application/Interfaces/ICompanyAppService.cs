@@ -6,5 +6,6 @@ namespace Omega.FleetManagement.Application.Interfaces
     {
         Task<bool> RegisterCompanyAndAdmin(CreateCompanyRequest request);
         Task<IEnumerable<CompanyResponse>> GetAllCompanies();
+        Task<bool> UpdateCompanyAsync(Guid id, UpdateCompanyRequest request);
     }
 }

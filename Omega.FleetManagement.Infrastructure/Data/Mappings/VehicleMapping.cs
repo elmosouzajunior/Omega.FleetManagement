@@ -38,6 +38,11 @@ namespace Omega.FleetManagement.Infrastructure.Data.Mappings
                 .HasForeignKey(v => v.DriverId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            builder.HasMany(v => v.Expenses)
+                .WithOne(e => e.Vehicle)
+                .HasForeignKey(e => e.VehicleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             builder.HasIndex(v => v.LicensePlate).IsUnique();
         }
     }

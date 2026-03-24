@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+ï»¿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Omega.FleetManagement.Application.Interfaces;
@@ -15,7 +15,7 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-/// 1. Configurações de Banco de Dados (PostgreSQL + Snake Case)
+/// 1. ConfiguraÃ§Ãµes de Banco de Dados (PostgreSQL + Snake Case)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<FleetContext>(options =>
@@ -23,7 +23,7 @@ builder.Services.AddDbContext<FleetContext>(options =>
     options.UseNpgsql(connectionString, b => b.MigrationsAssembly("Omega.FleetManagement.Infrastructure"));
 });
 
-// Configuração do Identity
+// ConfiguraÃ§Ã£o do Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 {
     options.Password.RequireDigit = false;
@@ -59,7 +59,7 @@ builder.Services.AddAuthentication(x =>
         };
     });
 
-// 2. Injeção de Dependência (DI)
+// 2. InjeÃ§Ã£o de DependÃªncia (DI)
 
 // Camada de Infraestrutura
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -69,21 +69,33 @@ builder.Services.AddScoped<IDriverRepository, DriverRepository>();
 builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
 builder.Services.AddScoped<ICompanyAdminRepository, CompanyAdminRepository>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
-builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+builder.Services.AddScoped<IExpenseRepository, ExpenseRepository>();
+builder.Services.AddScoped<IExpenseTypeRepository, ExpenseTypeRepository>();
+var storageProvider = (builder.Configuration["StorageConfig:Provider"] ?? "Local").ToLowerInvariant();
+if (storageProvider == "azureblob")
+{
+    builder.Services.AddScoped<IFileStorageService, AzureBlobFileStorageService>();
+}
+else
+{
+    builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+}
 
-// Camada de Domínio
+// Camada de DomÃ­nio
 builder.Services.AddScoped<ITripService, TripService>();
 builder.Services.AddScoped<IDriverService, DriverService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 
 
-// Camada de Aplicação
+// Camada de AplicaÃ§Ã£o
 builder.Services.AddScoped<ITripAppService, TripAppService>();
 builder.Services.AddScoped<IDriverAppService, DriverAppService>();
 builder.Services.AddScoped<IVehicleAppService, VehicleAppService>();
+builder.Services.AddScoped<IExpenseTypeAppService, ExpenseTypeAppService>();
 builder.Services.AddScoped<ICompanyAppService, CompanyAppService>();
 builder.Services.AddScoped<ICompanyAdminAppService, CompanyAdminAppService>();
 builder.Services.AddScoped<IDashboardAppService, DashboardAppService>();
+builder.Services.AddScoped<IReportAppService, ReportAppService>();
 
 // 3. Controladores e JSON (Configura para aceitar Enums como string no Swagger se preferir)
 builder.Services.AddControllers()
@@ -96,7 +108,7 @@ builder.Services.AddControllers()
     })
     .ConfigureApiBehaviorOptions(options =>
     {
-        // Isso impede que o .NET barre a requisição antes de chegar no seu breakpoint
+        // Isso impede que o .NET barre a requisiÃ§Ã£o antes de chegar no seu breakpoint
         options.SuppressModelStateInvalidFilter = true;
     }); ;
 
@@ -106,7 +118,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "Omega Fleet Management", Version = "v1" });
 
-    // Configuração para aceitar o Token JWT no Swagger
+    // ConfiguraÃ§Ã£o para aceitar o Token JWT no Swagger
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Exemplo: \"Authorization: Bearer {token}\"",
@@ -132,12 +144,18 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// 5. Configuração de CORS (Essencial para o Angular)
+// 5. ConfiguraÃ§Ã£o de CORS (Essencial para o Angular)
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+    if (allowedOrigins == null || allowedOrigins.Length == 0)
+    {
+        allowedOrigins = ["http://localhost:4200"];
+    }
+
     options.AddPolicy("AngularPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:4200") // URL padrão do Angular
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -151,7 +169,7 @@ using (var scope = app.Services.CreateScope())
 {
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-    await DbInitializer.SeedData(userManager, roleManager);
+    await DbInitializer.SeedData(userManager, roleManager, builder.Configuration);
 }
 
 if (app.Environment.IsDevelopment())
@@ -175,10 +193,5 @@ app.MapControllers();
 
 app.Run();
 
-// Método auxiliar para facilitar Migrations automáticas em Dev
-void UseMigrations(WebApplication app)
-{
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<FleetContext>();
-    db.Database.Migrate();
-}
+
+

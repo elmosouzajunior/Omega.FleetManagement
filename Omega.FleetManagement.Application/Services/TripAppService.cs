@@ -9,13 +9,23 @@ namespace Omega.FleetManagement.Application.Services
     {
         private readonly ITripService _tripDomainService;
         private readonly ITripRepository _tripRepository;
+        private readonly IExpenseRepository _expenseRepository;
+        private readonly IExpenseTypeRepository _expenseTypeRepository;
         private readonly IFileStorageService _storage;
         private readonly IUnitOfWork _uow;
 
-        public TripAppService(ITripService tripDomainService, ITripRepository tripRepository, IFileStorageService storage, IUnitOfWork uow)
+        public TripAppService(
+            ITripService tripDomainService,
+            ITripRepository tripRepository,
+            IExpenseRepository expenseRepository,
+            IExpenseTypeRepository expenseTypeRepository,
+            IFileStorageService storage,
+            IUnitOfWork uow)
         {
             _tripDomainService = tripDomainService;
             _tripRepository = tripRepository;
+            _expenseRepository = expenseRepository;
+            _expenseTypeRepository = expenseTypeRepository;
             _storage = storage;
             _uow = uow;
         }
@@ -42,6 +52,7 @@ namespace Omega.FleetManagement.Application.Services
                     currentDriverId,
                     currentVehicleId,
                     dto.LoadingLocation,
+                    dto.UnloadingLocation,
                     dto.LoadingDate.ToUniversalTime(),
                     dto.StartKm, // Ajustado para Km (C# standard)
                     dto.FreightValue,
@@ -60,6 +71,82 @@ namespace Omega.FleetManagement.Application.Services
 
                 throw;
             }
+        }
+
+        public async Task ReopenTripAsync(Guid tripId, Guid companyId)
+        {
+            var trip = await _tripDomainService.ReopenTripAsync(tripId, companyId);
+            await _tripRepository.UpdateAsync(trip);
+            await _uow.CommitAsync();
+        }
+
+        public async Task CancelTripAsync(Guid tripId, Guid companyId)
+        {
+            var trip = await _tripDomainService.CancelTripAsync(tripId, companyId);
+            await _tripRepository.UpdateAsync(trip);
+            await _uow.CommitAsync();
+        }
+
+        public async Task FinishTripAsync(Guid tripId, FinishTripRequest request, Guid companyId)
+        {
+            var trip = await _tripDomainService.FinishTripAsync(
+                tripId,
+                companyId,
+                request.UnloadingDate.ToUniversalTime(),
+                request.UnloadingLocation,
+                request.FinishKm);
+
+            await _tripRepository.UpdateAsync(trip);
+            await _uow.CommitAsync();
+        }
+
+        public async Task AddExpenseAsync(Guid tripId, CreateTripExpenseRequest request, Guid companyId)
+        {
+            var trip = await _tripRepository.GetByIdAsync(tripId, companyId);
+            if (trip == null || trip.CompanyId != companyId)
+                throw new ArgumentException("Viagem não encontrada.");
+
+            var expenseType = await _expenseTypeRepository.GetByIdAsync(request.ExpenseTypeId);
+            if (expenseType == null || expenseType.CompanyId != companyId)
+                throw new ArgumentException("Tipo de despesa inválido para a empresa.");
+
+            var expense = new Domain.Entities.Expense(
+                companyId: companyId,
+                expenseTypeId: request.ExpenseTypeId,
+                description: request.Description,
+                value: request.Value,
+                date: request.ExpenseDate?.ToUniversalTime() ?? DateTime.UtcNow,
+                tripId: tripId);
+
+            trip.AddExpense(expense);
+
+            await _expenseRepository.AddAsync(expense);
+            await _uow.CommitAsync();
+        }
+
+        public async Task UpdateExpenseAsync(Guid tripId, Guid expenseId, UpdateTripExpenseRequest request, Guid companyId)
+        {
+            var trip = await _tripRepository.GetByIdAsync(tripId, companyId);
+            if (trip == null || trip.CompanyId != companyId)
+                throw new ArgumentException("Viagem não encontrada.");
+
+            var expense = await _expenseRepository.GetByIdAsync(expenseId);
+            if (expense == null || expense.CompanyId != companyId || expense.TripId != tripId)
+                throw new ArgumentException("Despesa não encontrada para esta viagem.");
+
+            var expenseType = await _expenseTypeRepository.GetByIdAsync(request.ExpenseTypeId);
+            if (expenseType == null || expenseType.CompanyId != companyId)
+                throw new ArgumentException("Tipo de despesa inválido para a empresa.");
+
+            expense.SetExpenseType(request.ExpenseTypeId);
+            expense.SetDescription(request.Description);
+            expense.SetValue(request.Value);
+
+            if (request.ExpenseDate.HasValue)
+                expense.ChangeDate(request.ExpenseDate.Value.ToUniversalTime());
+
+            await _expenseRepository.UpdateAsync(expense);
+            await _uow.CommitAsync();
         }
 
         public async Task<IEnumerable<TripResponseDto>> GetTripsByCompanyIdAsync(Guid companyId)
@@ -89,7 +176,7 @@ namespace Omega.FleetManagement.Application.Services
             return tripDtos;
         }
 
-        public async Task<TripDetailResponseDto> GetTripByIdAsync(Guid tripId, Guid companyId)
+        public async Task<TripDetailResponseDto?> GetTripByIdAsync(Guid tripId, Guid companyId)
         {
             var trip = await _tripRepository.GetByIdAsync(tripId, companyId);
             if (trip == null) return null;
@@ -119,7 +206,7 @@ namespace Omega.FleetManagement.Application.Services
                     Value = e.Value,
                     ExpenseDate = e.Date,
                     ExpenseTypeId = e.ExpenseTypeId,
-                    ExpenseTypeName = string.Empty
+                    ExpenseTypeName = e.ExpenseType?.Name
                 }).ToList()
             };
             return tripDetailDto;

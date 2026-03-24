@@ -1,0 +1,49 @@
+<aside class="sidebar-container">
+  <div class="sidebar-header">
+    <div class="brand-area">
+      <div class="identity">
+        <span class="company-name">{{ companyName }}</span>
+        <span class="user-name">{{ userName }}</span>
+      </div>
+    </div>
+    <button type="button" class="btn-close-menu" (click)="onClose()" aria-label="Fechar menu">
+      x
+    </button>
+  </div>
+
+  <nav class="nav-menu" *ngIf="isAdmin()">
+    <a routerLink="/Admin/dashboard" routerLinkActive="active" class="nav-link">
+      <span class="nav-text">Dashboard</span>
+    </a>
+    <a routerLink="/Admin/drivers" routerLinkActive="active" class="nav-link">
+      <span class="nav-text">Motoristas</span>
+    </a>
+    <a routerLink="/Admin/vehicles" routerLinkActive="active" class="nav-link">
+      <span class="nav-text">Veiculos</span>
+    </a>
+    <a routerLink="/Admin/trips" routerLinkActive="active" class="nav-link">
+      <span class="nav-text">Viagens</span>
+    </a>
+    <a routerLink="/Admin/reports" routerLinkActive="active" class="nav-link">
+      <span class="nav-text">Relatorios</span>
+    </a>
+  </nav>
+
+  <nav class="nav-menu" *ngIf="isMaster()">
+    <a routerLink="/Master/companies" routerLinkActive="active" class="nav-link">
+      <span class="nav-text">Empresas</span>
+    </a>
+    <a routerLink="/Master/users" routerLinkActive="active" class="nav-link">
+      <span class="nav-text">Administradores</span>
+    </a>
+    <a routerLink="/Master/expense-types" routerLinkActive="active" class="nav-link">
+      <span class="nav-text">Tipos de Despesa</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button type="button" class="btn-logout-custom" (click)="logout()">
+      <span class="nav-text">Sair do Sistema</span>
+    </button>
+  </div>
+</aside>

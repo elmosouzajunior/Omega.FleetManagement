@@ -12,7 +12,7 @@ namespace Omega.FleetManagement.Domain.Entities
         [ForeignKey("Vehicle")]
         public Guid VehicleId { get; private set; }
 
-        public string LoadingLocation { get; private set; }
+        public string LoadingLocation { get; private set; } = string.Empty;
         public string? UnloadingLocation { get; private set; }
         public DateTime LoadingDate { get; private set; }
         public DateTime? UnloadingDate { get; private set; }
@@ -25,17 +25,18 @@ namespace Omega.FleetManagement.Domain.Entities
         public string? AttachmentPath { get; private set; }
 
         // Propriedades de navegação
-        public virtual Driver Driver { get; private set; }
-        public virtual Vehicle Vehicle { get; private set; }
+        public virtual Driver Driver { get; private set; } = null!;
+        public virtual Vehicle Vehicle { get; private set; } = null!;
 
         // Relacionamento com Despesas
-        public virtual ICollection<Expense> Expenses { get; private set; }
+        public virtual ICollection<Expense> Expenses { get; private set; } = new List<Expense>();
 
         public Trip(
             Guid companyId,
             Guid driverId,
             Guid vehicleId,
             string loadingLocation,
+            string unloadingLocation,
             DateTime loadingDate,
             decimal startKm,
             decimal freightValue,
@@ -45,6 +46,7 @@ namespace Omega.FleetManagement.Domain.Entities
             DriverId = driverId;
             VehicleId = vehicleId;
             LoadingLocation = loadingLocation;
+            UnloadingLocation = unloadingLocation;
             LoadingDate = loadingDate;
             StartKm = startKm;
             FreightValue = freightValue;
@@ -52,16 +54,17 @@ namespace Omega.FleetManagement.Domain.Entities
             CommissionValue = (freightValue * commissionPercent) / 100;
             Status = TripStatus.Open;
             AttachmentPath = attachmentPath;
-            Expenses = new List<Expense>();
         }
 
         protected Trip() : base(Guid.Empty)
         {
-            Expenses = new List<Expense>();
         }
 
         public void Finish(string unloadingLocation, DateTime unloadingDate, decimal finishKm)
         {
+            if (Status != TripStatus.Open)
+                throw new ApplicationException("Apenas viagens abertas podem ser finalizadas.");
+
             if (finishKm <= StartKm)
                 throw new Exception("KM final não pode ser menor ou igual ao inicial.");
 
@@ -69,6 +72,28 @@ namespace Omega.FleetManagement.Domain.Entities
             UnloadingDate = unloadingDate;
             FinishKm = finishKm;
             Status = TripStatus.Finished;
+        }
+
+        public void Reopen()
+        {
+            if (Status != TripStatus.Finished)
+                throw new ApplicationException("Apenas viagens finalizadas podem ser reabertas.");
+
+            Status = TripStatus.Open;
+            UnloadingDate = null;
+            UnloadingLocation = null;
+            FinishKm = 0;
+        }
+
+        public void Cancel()
+        {
+            if (Status == TripStatus.Cancelled)
+                throw new ApplicationException("A viagem já está cancelada.");
+
+            if (Status != TripStatus.Open)
+                throw new ApplicationException("Apenas viagens abertas podem ser canceladas.");
+
+            Status = TripStatus.Cancelled;
         }
 
         public void AddExpense(Expense expense)

@@ -12,6 +12,7 @@ namespace Omega.FleetManagement.Domain.Entities
         // FK e Propriedade de Navegação
         public Guid? DriverId { get; private set; }
         public virtual Driver? Driver { get; private set; } // O virtual permite o Lazy Loading se necessário
+        public virtual ICollection<Expense> Expenses { get; private set; }
 
         // Construtor para o EF Core
         protected Vehicle() : base(Guid.Empty)
@@ -19,6 +20,7 @@ namespace Omega.FleetManagement.Domain.Entities
             // Inicializamos as strings para silenciar o aviso de non-nullable
             LicensePlate = null!;
             Manufacturer = null!;
+            Expenses = new List<Expense>();
         }
 
         public Vehicle(Guid companyId, string licensePlate, string manufacturer, string color) : base(companyId)
@@ -27,6 +29,7 @@ namespace Omega.FleetManagement.Domain.Entities
             Manufacturer = manufacturer;
             Color = color;
             IsActive = true;
+            Expenses = new List<Expense>();
         }
 
         // --- Regras de Negócio ---

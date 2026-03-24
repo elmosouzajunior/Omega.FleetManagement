@@ -18,5 +18,18 @@
             Cnpj = cnpj;
             IsActive = true;
         }
+
+        public void Update(string name, string cnpj, bool isActive)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Nome da empresa é obrigatório.");
+
+            if (string.IsNullOrWhiteSpace(cnpj))
+                throw new ArgumentException("CNPJ é obrigatório.");
+
+            Name = name.Trim();
+            Cnpj = cnpj.Trim();
+            IsActive = isActive;
+        }
     }
 }

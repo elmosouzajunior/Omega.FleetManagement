@@ -75,7 +75,7 @@ public class TripMapping : IEntityTypeConfiguration<Trip>
 
         builder.HasMany(t => t.Expenses)
             .WithOne(e => e.Trip)
-            .HasForeignKey("TripId")
+            .HasForeignKey(e => e.TripId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // --- ÍNDICES ---

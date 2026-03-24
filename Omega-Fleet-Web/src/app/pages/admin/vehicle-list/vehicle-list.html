@@ -1,0 +1,186 @@
+﻿<div class="list-container">
+  <header class="list-header">
+    <div class="title-area">
+      <h1>Gest&atilde;o de Ve&iacute;culos</h1>
+      <div class="header-actions">
+        <button routerLink="/Admin/vehicle-create" class="btn-new">Cadastrar Ve&iacute;culo</button>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Filtrar por Status:</label>
+        <select [(ngModel)]="filterStatus" (change)="applyFilters()">
+          <option value="Ativo">Ativos</option>
+          <option value="Inativo">Inativos</option>
+        </select>
+      </div>
+      <span class="count"><strong>{{ filteredVehicles.length }}</strong> ve&iacute;culos encontrados</span>
+    </div>
+  </header>
+
+  <div class="card table-card">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>Placa</th>
+          <th>Marca</th>
+          <th>Status</th>
+          <th>Motorista Alocado</th>
+          <th class="text-center">A&Ccedil;&Otilde;ES</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let vehicle of filteredVehicles">
+          <td class="bold">{{ vehicle.licensePlate }}</td>
+          <td class="bold">{{ vehicle.manufacturer }}</td>
+          <td>
+            <span class="badge" [ngClass]="vehicle.isActive ? 'bg-success' : 'bg-danger'">
+              {{ vehicle.isActive ? 'Ativo' : 'Inativo' }}
+            </span>
+          </td>
+          <td class="driver-column">
+            <span [class.text-muted]="!vehicle.driverName">
+              {{ vehicle.driverName || '-' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="action-buttons">
+              <button class="btn-icon" (click)="openEditModal(vehicle)" title="Editar Veiculo">&#9998;</button>
+              <button class="btn-icon" (click)="openAssignDriver(vehicle)" title="Vincular Motorista">&#128279;</button>
+              <button class="btn-icon" (click)="goToVehicleExpenseScreen(vehicle)" title="Lancar Despesa">&#128176;</button>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredVehicles.length === 0 && !loading">
+          <td colspan="5" class="empty">
+            <div class="empty-state">
+              <p>Nenhum ve&iacute;culo encontrado para este filtro.</p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showModal" (click)="$event.target === $event.currentTarget && closeModal()">
+  <div class="modal-card">
+    <header class="modal-header">
+      <h2>Vincular Motorista</h2>
+      <button class="btn-close" (click)="closeModal()">x</button>
+    </header>
+
+    <div class="modal-body">
+      <div class="vehicle-info">
+        <p>Voc&ecirc; est&aacute; vinculando um condutor ao ve&iacute;culo:</p>
+        <div class="plate-badge">{{ selectedVehicle?.licensePlate }}</div>
+      </div>
+
+      <div class="form-group">
+        <label>Selecione um Motorista dispon&iacute;vel:</label>
+        <select [(ngModel)]="driverIdToAssign" class="modern-select">
+          <option [ngValue]="null">-- Deixar Ve&iacute;culo sem Motorista (Desvincular) --</option>
+          <option *ngFor="let d of drivers" [ngValue]="d.id">
+            {{ d.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="error-container" *ngIf="errorMessage">
+        <p class="error-msg">&#9888; {{ errorMessage }}</p>
+      </div>
+    </div>
+
+    <footer class="modal-footer">
+      <button class="btn-secondary" (click)="closeModal()" [disabled]="loading">Cancelar</button>
+      <button class="btn-confirm" (click)="confirmAssignment()" [disabled]="loading">
+        {{ loading ? 'Processando...' : (driverIdToAssign === null ? 'Remover Vinculo' : 'Confirmar Vinculo') }}
+      </button>
+    </footer>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showEditVehicleModal" (click)="$event.target === $event.currentTarget && closeEditModal()">
+  <div class="modal-card">
+    <header class="modal-header">
+      <h2>Editar Ve&iacute;culo</h2>
+      <button class="btn-close" (click)="closeEditModal()">x</button>
+    </header>
+
+    <div class="modal-body" *ngIf="vehicleToEdit">
+      <div class="form-group">
+        <label>Placa:</label>
+        <input type="text" [(ngModel)]="vehicleToEdit.licensePlate" class="modern-select" placeholder="Ex: ABC1D23">
+      </div>
+
+      <div class="form-group" style="margin-top: 15px;">
+        <label>Marca/Modelo:</label>
+        <input type="text" [(ngModel)]="vehicleToEdit.manufacturer" class="modern-select" placeholder="Ex: Volvo FH 540">
+      </div>
+
+      <div class="form-group" style="margin-top: 15px;">
+        <label>Status do Ve&iacute;culo:</label>
+        <select [(ngModel)]="vehicleToEdit.isActive" class="modern-select">
+          <option [ngValue]="true">Ativo</option>
+          <option [ngValue]="false">Inativo</option>
+        </select>
+      </div>
+
+      <p class="error-msg" *ngIf="errorMessage" style="color: #ef4444; margin-top: 10px;">
+        &#9888; {{ errorMessage }}
+      </p>
+    </div>
+
+    <footer class="modal-footer">
+      <button class="btn-secondary" (click)="closeEditModal()" [disabled]="saving">Cancelar</button>
+      <button class="btn-confirm" (click)="saveVehicleEdit()" [disabled]="saving">
+        {{ saving ? 'Salvando...' : 'Salvar Alteracoes' }}
+      </button>
+    </footer>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showVehicleExpenseModal" (click)="$event.target === $event.currentTarget && closeVehicleExpenseModal()">
+  <div class="modal-card">
+    <header class="modal-header">
+      <h2>Lancar despesa do ve&iacute;culo</h2>
+      <button class="btn-close" (click)="closeVehicleExpenseModal()">x</button>
+    </header>
+
+    <div class="modal-body">
+      <div class="vehicle-info" *ngIf="vehicleForExpense">
+        <p>Ve&iacute;culo selecionado:</p>
+        <div class="plate-badge">{{ vehicleForExpense.licensePlate }}</div>
+      </div>
+
+      <div class="form-group">
+        <label>Tipo de despesa *</label>
+        <select [(ngModel)]="vehicleExpenseForm.typeId" class="modern-select">
+          <option value="">Selecione...</option>
+          <option *ngFor="let type of expenseTypes" [value]="type.id || type.expenseTypeId">{{ type.name || type.description }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Descricao *</label>
+        <input type="text" [(ngModel)]="vehicleExpenseForm.description" class="modern-select" placeholder="Ex: lavagem, manutencao, borracharia..." />
+      </div>
+
+      <div class="form-group">
+        <label>Valor (R$) *</label>
+        <input type="number" min="0.01" step="0.01" [(ngModel)]="vehicleExpenseForm.value" class="modern-select" />
+      </div>
+
+      <p class="error-msg" *ngIf="vehicleExpenseError">&#9888; {{ vehicleExpenseError }}</p>
+    </div>
+
+    <footer class="modal-footer">
+      <button class="btn-secondary" (click)="closeVehicleExpenseModal()" [disabled]="savingVehicleExpense">Cancelar</button>
+      <button class="btn-confirm" (click)="submitVehicleExpense()" [disabled]="savingVehicleExpense">
+        {{ savingVehicleExpense ? 'Salvando...' : 'Salvar despesa' }}
+      </button>
+    </footer>
+  </div>
+</div>

@@ -1,0 +1,57 @@
+<div class="list-container">
+  <header class="list-header">
+    <div class="title-area">
+      <h1>Novo Administrador</h1>
+      <button class="btn-secondary" routerLink="/Master/users">Voltar</button>
+    </div>
+  </header>
+
+  <section class="table-card">
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+      <div class="form-section">
+        <h2>Dados de Acesso</h2>
+        <div class="form-grid two-cols">
+          <div class="form-group">
+            <label>Nome Completo *</label>
+            <input class="modern-select" formControlName="adminFullName" placeholder="Ex: Luiz Carlos Silva" />
+          </div>
+
+          <div class="form-group">
+            <label>E-mail (login) *</label>
+            <input class="modern-select" formControlName="adminEmail" placeholder="admin@empresa.com.br" />
+          </div>
+
+          <div class="form-group">
+            <label>Senha Inicial *</label>
+            <input class="modern-select" type="password" formControlName="adminPassword" placeholder="Minimo de 6 caracteres" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2>Vinculo com Empresa</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Empresa *</label>
+            <select class="modern-select" formControlName="companyId" [disabled]="loadingCompanies || loading">
+              <option value="">Selecione uma empresa...</option>
+              <option *ngFor="let c of companies" [value]="c.id">
+                {{ c.name }}
+              </option>
+            </select>
+            <small class="help" *ngIf="loadingCompanies">Carregando empresas...</small>
+          </div>
+        </div>
+      </div>
+
+      <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+      <footer class="form-actions">
+        <button type="button" class="btn-secondary" routerLink="/Master/users" [disabled]="loading">Cancelar</button>
+        <button type="submit" class="btn-new" [disabled]="userForm.invalid || loading || loadingCompanies">
+          {{ loading ? 'Salvando...' : 'Cadastrar Administrador' }}
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

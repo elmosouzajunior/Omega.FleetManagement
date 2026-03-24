@@ -1,0 +1,67 @@
+﻿<div class="list-container">
+  <div class="list-header">
+    <div class="title-area">
+      <h1>Gest&atilde;o de Viagens</h1>
+      <div class="header-actions">
+        <button class="btn-new" routerLink="/Admin/trip-open">Abrir Viagem</button>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Filtrar por Status:</label>
+        <select [(ngModel)]="filterStatus" (change)="applyFilters()">
+          <option value="Open">Abertas</option>
+          <option value="Closed">Encerradas</option>
+          <option value="Todas">Todas</option>
+        </select>
+      </div>
+      <div class="count">
+        {{ filteredTrips.length }} viagens encontradas
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>Data de In&iacute;cio</th>
+          <th>Data de T&eacute;rmino</th>
+          <th>Ve&iacute;culo</th>
+          <th>Frete</th>
+          <th>Status</th>
+          <th style="text-align: right;">A&Ccedil;&Otilde;ES</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let trip of filteredTrips">
+          <td class="date-cell">{{ trip.loadingDate | date:'dd/MM/yyyy' }}</td>
+          <td class="date-cell">{{ !trip.unloadingDate || trip.unloadingDate.startsWith('0001') ? '-' : (trip.unloadingDate | date:'dd/MM/yyyy') }}</td>
+          <td>{{ trip.vehicleLicensePlate }} - {{ trip.vehicleManufacturer }}</td>
+          <td class="text">{{ trip.freightValue | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+          <td>
+            <span class="badge" [ngClass]="isTripOpen(trip) ? 'status-open' : 'status-closed'">
+              {{ isTripOpen(trip) ? 'ABERTA' : 'ENCERRADA' }}
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <div class="action-buttons">
+              <button class="btn-icon" [routerLink]="['/Admin/trip-detail', trip.id]" title="Ver detalhes">&#128269;</button>
+              <button
+                class="btn-icon"
+                *ngIf="isTripOpen(trip)"
+                [routerLink]="['/Admin/trip-expenses/new']"
+                [queryParams]="{ tripId: trip.id }"
+                title="Lancar despesa na viagem aberta"
+              >&#128176;</button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="filteredTrips.length === 0 && !loading">
+          <td colspan="6" class="empty">Nenhuma viagem encontrada.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

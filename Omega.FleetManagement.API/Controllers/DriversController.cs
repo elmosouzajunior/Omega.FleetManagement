@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Omega.FleetManagement.Application.DTOs;
 using Omega.FleetManagement.Application.Interfaces;
 
 namespace Omega.FleetManagement.API.Controllers
 {
+    [Authorize]
     [Route("api/v1/drivers")]
     [ApiController]
     public class DriversController : ControllerBase
@@ -19,7 +21,9 @@ namespace Omega.FleetManagement.API.Controllers
         {
             try
             {
-                var companyId = Guid.Parse(User.FindFirst("CompanyId")?.Value);
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
                 await _driverAppService.CreateDriverAsync(dto, companyId);
                 return Ok(new { success = true, message = "Motorista cadastrado com sucesso!" });
             }
@@ -40,7 +44,9 @@ namespace Omega.FleetManagement.API.Controllers
         {
             try
             {
-                var companyId = Guid.Parse(User.FindFirst("CompanyId")?.Value);
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
                 var drivers = await _driverAppService.GetDriversByCompanyIdAsync(companyId);
                 if (drivers == null || !drivers.Any())
                     return NoContent();
@@ -72,7 +78,13 @@ namespace Omega.FleetManagement.API.Controllers
                 return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
             }
         }
+
+        private bool TryGetCompanyId(out Guid companyId)
+        {
+            return Guid.TryParse(User.FindFirst("CompanyId")?.Value, out companyId);
+        }
     }
 }
 
         
+

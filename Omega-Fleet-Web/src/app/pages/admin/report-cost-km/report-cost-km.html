@@ -1,0 +1,40 @@
+<section class="report-wrapper">
+  <header class="report-header">
+    <div>
+      <h2>Custo por KM por Veiculo</h2>
+      <p>Somatorio de despesas de viagem e do proprio veiculo dividido pelos KM rodados.</p>
+    </div>
+    <button class="btn-refresh" (click)="load()" [disabled]="loading">Atualizar</button>
+  </header>
+
+  <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <div class="loading" *ngIf="loading">Carregando relatorio...</div>
+
+  <div class="table-card" *ngIf="!loading">
+    <table *ngIf="rows.length > 0">
+      <thead>
+        <tr>
+          <th>Placa</th>
+          <th>Veiculo</th>
+          <th>KM Rodado</th>
+          <th>Despesa Total</th>
+          <th>Custo por KM</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of rows">
+          <td class="bold">{{ row.licensePlate }}</td>
+          <td>{{ row.manufacturer }}</td>
+          <td>{{ row.totalKm | number:'1.2-2':'pt-BR' }}</td>
+          <td>{{ row.totalExpense | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+          <td>{{ row.costPerKm | currency:'BRL':'symbol':'1.2-4':'pt-BR' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty" *ngIf="rows.length === 0">
+      Nenhum dado de custo por KM encontrado para os veiculos da empresa.
+    </div>
+  </div>
+</section>

@@ -20,13 +20,20 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
             await _context.Trips.AddAsync(trip);
         }
 
+        public Task UpdateAsync(Trip trip)
+        {
+            _context.Trips.Update(trip);
+            return Task.CompletedTask;
+        }
+
         public async Task<Trip?> GetByIdAsync(Guid id, Guid companyId)
         {
             return await _context.Trips
                 .Include(t => t.Driver)
                 .Include(t => t.Vehicle)
                 .Include(t => t.Expenses)
-                .FirstOrDefaultAsync(t => t.Id == id);
+                    .ThenInclude(e => e.ExpenseType)
+                .FirstOrDefaultAsync(t => t.Id == id && t.CompanyId == companyId);
         }
 
         public async Task<IEnumerable<Trip>> GetByCompanyIdAsync(Guid companyId)
@@ -47,10 +54,12 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
                 .ToListAsync();
         }
 
-        public async Task<bool> HasOpenTripAsync(Guid driverId)
+        public async Task<bool> HasOpenTripAsync(Guid driverId, Guid? tripIdToIgnore = null)
         {
-            // Verifica no banco se existe alguma viagem para este motorista com o status 'Open' (ou o equivalente ao teu Enum de aberto)
-            return await _context.Trips.AnyAsync(t => t.DriverId == driverId && t.Status == TripStatus.Open);
+            return await _context.Trips.AnyAsync(t =>
+                t.DriverId == driverId &&
+                t.Status == TripStatus.Open &&
+                (!tripIdToIgnore.HasValue || t.Id != tripIdToIgnore.Value));
         }
     }
 }

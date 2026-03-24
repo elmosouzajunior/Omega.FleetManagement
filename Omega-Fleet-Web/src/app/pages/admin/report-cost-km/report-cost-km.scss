@@ -1,0 +1,74 @@
+.report-wrapper {
+  padding: 20px;
+
+  .report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    h2 {
+      margin: 0;
+      color: #0f172a;
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 6px 0 0;
+      color: #64748b;
+      font-size: 0.92rem;
+    }
+  }
+
+  .btn-refresh {
+    border: none;
+    background: #0ea5e9;
+    color: #fff;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .loading,
+  .empty {
+    padding: 16px;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #475569;
+  }
+
+  .table-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    text-align: left;
+  }
+
+  th {
+    background: #f8fafc;
+    color: #334155;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .bold {
+    font-weight: 700;
+    color: #0f172a;
+  }
+}

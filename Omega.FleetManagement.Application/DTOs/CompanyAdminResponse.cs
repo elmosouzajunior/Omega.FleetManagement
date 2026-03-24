@@ -1,8 +1,9 @@
-﻿namespace Omega.FleetManagement.Application.DTOs
+namespace Omega.FleetManagement.Application.DTOs
 {
-    public record CompanyAdminResponse (
+    public record CompanyAdminResponse(
+        Guid Id,
         string Name,
-        string Cpf,
+        string Email,
         bool IsActive,
-        string CompanyName);    
+        string CompanyName);
 }

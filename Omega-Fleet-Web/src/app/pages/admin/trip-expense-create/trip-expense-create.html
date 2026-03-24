@@ -1,0 +1,75 @@
+﻿<div class="list-container">
+  <header class="list-header">
+    <div class="title-area">
+      <h1>Lancar Despesa em Viagem Aberta</h1>
+      <button class="btn-secondary" type="button" (click)="goBack()">Voltar para viagens</button>
+    </div>
+  </header>
+
+  <div class="table-card form-card">
+    <form (ngSubmit)="submit()">
+      <section class="form-section">
+        <h2>Dados da Despesa</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Viagem aberta *</label>
+            <select class="modern-select" [(ngModel)]="form.tripId" name="tripId" [disabled]="saving || loadingTrips">
+              <option value="">Selecione...</option>
+              <option *ngFor="let trip of openTrips" [value]="trip.id">
+                {{ trip.vehicleLicensePlate || trip.vehicle?.licensePlate || '-' }} | {{ trip.loadingLocation }} -> {{ trip.unloadingLocation || 'Destino pendente' }}
+              </option>
+            </select>
+            <small *ngIf="loadingTrips">Carregando viagens abertas...</small>
+          </div>
+
+          <div class="form-group">
+            <label>Tipo de despesa *</label>
+            <select class="modern-select" [(ngModel)]="form.expenseTypeId" name="expenseTypeId" [disabled]="saving || loadingExpenseTypes">
+              <option value="">Selecione...</option>
+              <option *ngFor="let type of expenseTypes" [value]="type.id || type.expenseTypeId">
+                {{ type.name || type.description }}
+              </option>
+            </select>
+            <small *ngIf="loadingExpenseTypes">Carregando tipos...</small>
+          </div>
+
+          <div class="form-group full">
+            <label>Descricao *</label>
+            <input
+              class="modern-select"
+              type="text"
+              [(ngModel)]="form.description"
+              name="description"
+              placeholder="Ex: pedagio, abastecimento, refeicao..."
+              [disabled]="saving"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Valor (R$) *</label>
+            <input
+              class="modern-select"
+              type="text"
+              name="valueDisplay"
+              [value]="valueDisplay"
+              (input)="onValueInput($event)"
+              inputmode="decimal"
+              placeholder="0,00"
+              [disabled]="saving"
+            />
+          </div>
+        </div>
+      </section>
+
+      <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+      <p class="success-msg" *ngIf="successMessage">{{ successMessage }}</p>
+
+      <footer class="actions">
+        <button class="btn-secondary" type="button" (click)="goBack()" [disabled]="saving">Cancelar</button>
+        <button type="submit" class="btn-new" [disabled]="saving">
+          {{ saving ? 'Salvando...' : 'Salvar despesa' }}
+        </button>
+      </footer>
+    </form>
+  </div>
+</div>

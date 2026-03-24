@@ -14,5 +14,15 @@
 
         // ID que liga ao AspNetUser (opcional, mas ajuda na rastreabilidade)
         public string? IdentityUserId { get; set; }
+
+        public void Deactivate()
+        {
+            IsActive = false;
+        }
+
+        public void Reactivate()
+        {
+            IsActive = true;
+        }
     }
 }

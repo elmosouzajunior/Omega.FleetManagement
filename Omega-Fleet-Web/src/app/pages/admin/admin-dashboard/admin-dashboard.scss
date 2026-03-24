@@ -1,0 +1,89 @@
+.dashboard-wrapper {
+  padding: 2rem;
+  background-color: #f8fafc;
+  min-height: 100vh;
+
+  .page-header {
+    margin-bottom: 2rem;
+    h1 { color: #1e293b; font-size: 1.8rem; font-weight: 700; margin: 0; }
+    p { color: #64748b; margin-top: 0.5rem; }
+  }
+
+  /* Cards de Estatísticas */
+  .stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+
+    .stat-card {
+      background: #fff;
+      padding: 1.5rem;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      border-left: 6px solid #e2e8f0;
+      transition: transform 0.2s;
+
+      &:hover { transform: translateY(-3px); }
+      &.blue { border-left-color: #3b82f6; }
+      &.green { border-left-color: #10b981; }
+      &.orange { border-left-color: #f59e0b; }
+
+      .stat-icon { font-size: 2rem; margin-right: 1.2rem; }
+      .stat-data {
+        display: flex;
+        flex-direction: column;
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: #1e293b; line-height: 1; }
+        .stat-label { font-size: 0.875rem; color: #64748b; margin-top: 4px; }
+      }
+    }
+  }
+
+  /* Tabela Profissional */
+  .card {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 2.5rem;
+    h3 { margin-bottom: 1.2rem; color: #334155; font-size: 1.1rem; }
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    th { text-align: left; padding: 12px; border-bottom: 2px solid #f1f5f9; color: #64748b; font-size: 0.85rem; text-transform: uppercase; }
+    td { padding: 16px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+    .empty-state { text-align: center; color: #94a3b8; padding: 3rem; font-style: italic; }
+  }
+
+  /* Botões de Ação */
+  .action-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    
+    .btn-action {
+      background: white;
+      border: 1px solid #e2e8f0;
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
+      color: #475569;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      }
+    }
+  }
+}

@@ -20,9 +20,16 @@ namespace Omega.FleetManagement.API.Controllers
         [HttpGet("admin-summary")]
         public async Task<IActionResult> GetAdminSummary()
         {
-            var companyId = Guid.Parse(User.FindFirst("CompanyId")?.Value);
+            if (!TryGetCompanyId(out var companyId))
+                return Unauthorized(new { message = "CompanyId inválido no token." });
+
             var result = await _dashboardAppService.GetAdminSummaryAsync(companyId);
             return Ok(result);
+        }
+
+        private bool TryGetCompanyId(out Guid companyId)
+        {
+            return Guid.TryParse(User.FindFirst("CompanyId")?.Value, out companyId);
         }
     }
 }

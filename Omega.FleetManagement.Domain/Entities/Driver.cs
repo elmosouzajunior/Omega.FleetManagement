@@ -5,13 +5,11 @@ namespace Omega.FleetManagement.Domain.Entities
 {
     public class Driver : Entity
     {
-        public string Name { get; private set; }
-        public string Cpf { get; private set; }
+        public string Name { get; private set; } = string.Empty;
+        public string Cpf { get; private set; } = string.Empty;
         public decimal CommissionRate { get; private set; }
         public bool IsActive { get; private set; }
         public Guid UserId { get; private set; }
-        public Guid CompanyId { get; private set; }
-
         protected Driver() : base(Guid.Empty) { } // Construtor protegido para EF Core
 
         public Driver(Guid companyId, Guid userId, string name, string cpf, decimal commissionRate) : base(Guid.NewGuid())

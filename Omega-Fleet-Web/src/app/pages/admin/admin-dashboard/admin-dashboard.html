@@ -1,0 +1,80 @@
+<div class="dashboard-wrapper">
+  <header class="page-header">
+    <h1>Painel Operacional</h1>
+    <p>Bem-vindo! Aqui está um resumo da sua frota hoje.</p>
+  </header>
+
+  <section class="stats-container">
+    <div class="stat-card blue" routerLink="/Admin/drivers" style="cursor: pointer;">
+      <div class="stat-icon">👤</div>
+      <div class="stat-data">
+        <span class="stat-value">{{ stats.activeDrivers }}</span>
+        <span class="stat-label">Motoristas Ativos</span>
+      </div>
+    </div>
+    
+    <div class="stat-card green" routerLink="/Admin/vehicles" style="cursor: pointer;">
+      <div class="stat-icon">🚛</div>
+      <div class="stat-data">
+        <span class="stat-value">{{ stats.activeVehicles }}</span>
+        <span class="stat-label">Veículos Ativos</span>
+      </div>
+    </div>
+    
+    <div class="stat-card orange" routerLink="/Admin/trips" style="cursor: pointer;">
+      <div class="stat-icon">🚩</div>
+      <div class="stat-data">
+        <span class="stat-value">{{ stats.openTrips }}</span>
+        <span class="stat-label">Viagens Abertas</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="table-section card">
+    <h3>Despesas Pendentes de Aprovação</h3>
+    <div class="table-responsive">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Motorista</th>
+            <th>Tipo</th>
+            <th>Valor</th>
+            <th class="text-center">Ação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="pendingExpenses.length === 0">
+            <td colspan="4" class="empty-state">
+              <div class="empty-content">
+                <p>Nenhuma despesa aguardando aprovação.</p>
+              </div>
+            </td>
+          </tr>
+          <tr *ngFor="let expense of pendingExpenses">
+            <td>{{ expense.driverName }}</td>
+            <td>{{ expense.type }}</td>
+            <td>{{ expense.value | currency:'BRL' }}</td>
+            <td class="text-center">
+              <button class="btn-view">Ver Detalhes</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="actions-section">
+    <h3>Ações Rápidas</h3>
+    <div class="action-grid">
+      <button class="btn-action" routerLink="/Admin/driver-create">
+        <span class="icon">👤</span> Novo Motorista
+      </button>
+      <button class="btn-action" routerLink="/Admin/vehicle-create">
+        <span class="icon">🚛</span> Novo Veículo
+      </button>
+      <button class="btn-action">
+        <span class="icon">📊</span> Gerar Relatórios
+      </button>
+    </div>
+  </section>
+</div>

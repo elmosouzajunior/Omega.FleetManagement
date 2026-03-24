@@ -6,7 +6,8 @@ namespace Omega.FleetManagement.Application.Interfaces
     {
         Task<List<VehicleResponse>> GetVehiclesByCompanyIdAsync(Guid companyId);
         Task CreateVehicleAsync(CreateVehicleRequest request, Guid companyId);
-        Task<bool> AssignDriverAsync(Guid vehicleId, Guid driverId);
+        Task<bool> AssignDriverAsync(Guid vehicleId, Guid? driverId);
         Task<bool> UpdateVehicleAsync(Guid driverId, EditVehicleRequest request);
+        Task AddExpenseAsync(Guid vehicleId, CreateVehicleExpenseRequest request, Guid companyId);
     }
 }

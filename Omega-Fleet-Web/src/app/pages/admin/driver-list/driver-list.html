@@ -1,0 +1,105 @@
+<div class="list-container">
+  <header class="list-header">
+    <div class="title-area">
+      <h1>Gestão de Motoristas</h1>
+      <button routerLink="/Admin/driver-create" class="btn-new">Cadastrar Motorista</button>
+    </div>
+
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Filtrar por Status:</label>
+        <select [(ngModel)]="filterStatus" (change)="applyFilters()">
+          <option value="Ativo">Ativos</option>
+          <option value="Inativo">Inativos</option>
+        </select>
+      </div>
+      <span class="count">{{ filteredDrivers.length }} motoristas encontrados</span>
+    </div>
+  </header>
+
+  <div class="card table-card">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>CPF</th>
+          <th class="text-center">Comissão</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let driver of filteredDrivers">
+          <td class="bold"> {{ driver.name }}</td>
+          <td class="bold">
+            {{ driver.cpf ?
+            (driver.cpf.substring(0,3) + '.' +
+            driver.cpf.substring(3,6) + '.' +
+            driver.cpf.substring(6,9) + '-' +
+            driver.cpf.substring(9,11)) : '---'
+            }}
+          </td>
+          <td class="col-numeric"> {{ driver.commissionRate | number:'1.1-1' }} % </td>
+          <td>
+            <span class="badge" [ngClass]="driver.isActive ? 'bg-success' : 'bg-danger'">
+              {{ driver.isActive ? 'Ativo' : 'Inativo' }}
+            </span>
+          </td>
+          <td>
+            <button class="btn-icon" (click)="openEditModal(driver)" title="Editar Motorista">✏️</button>
+          </td>
+        </tr>
+        <tr *ngIf="filteredDrivers.length === 0">
+          <td colspan="4" class="empty">Nenhum motorista encontrado para este filtro.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showEditModal">
+    <div class="modal-card">
+      <header class="modal-header">
+        <h2>Editar Motorista</h2>
+        <button class="btn-close" (click)="showEditModal = false">×</button>
+      </header>
+
+      <div class="modal-body" *ngIf="driverToEdit">
+        <div class="form-group">
+          <label>Nome Completo:</label>
+          <input type="text" [(ngModel)]="driverToEdit.name" class="modern-select">
+        </div>
+
+        <div class="form-group" style="margin-top: 15px;">
+          <label>CPF (Login de acesso):</label>
+          <input type="text" [(ngModel)]="driverToEdit.cpf" class="modern-select" placeholder="Apenas números">
+          <small class="text-muted">Mudar o CPF mudará o login do motorista.</small>
+        </div>
+
+        <div class="form-group" style="margin-top: 15px;">
+          <label>Comissão (%):</label>
+          <input type="number" [(ngModel)]="driverToEdit.commissionRate" class="modern-select">
+        </div>
+
+        <div class="form-group" style="margin-top: 15px;">
+          <label>Status:</label>
+          <select [(ngModel)]="driverToEdit.isActive" class="modern-select">
+            <option [ngValue]="true">Ativo</option>
+            <option [ngValue]="false">Inativo</option>
+          </select>
+        </div>
+
+        <p class="error-msg" *ngIf="errorMessage" style="color: #ef4444; margin-top: 10px;">
+          ⚠️ {{ errorMessage }}
+        </p>
+      </div>
+
+      <footer class="modal-footer">
+        <button class="btn-secondary" (click)="showEditModal = false" [disabled]="saving">Cancelar</button>
+        <button class="btn-secondary" (click)="saveDriverEdit()" [disabled]="saving">
+          {{ saving ? 'Salvando...' : 'Salvar Alterações' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+
+</div>

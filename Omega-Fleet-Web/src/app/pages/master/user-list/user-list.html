@@ -1,0 +1,91 @@
+<div class="list-container">
+  <header class="list-header">
+    <div class="title-area">
+      <h1>Administradores</h1>
+      <button class="btn-new" routerLink="/Master/users/new">
+        Cadastrar Administrador
+      </button>
+    </div>
+
+    <div class="filters-bar">
+      <span class="count"><strong>{{ admins.length }}</strong> administradores cadastrados</span>
+    </div>
+  </header>
+
+  <div class="card table-card">
+    <table class="modern-table" *ngIf="!loading">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>E-mail</th>
+          <th>Empresa</th>
+          <th>Status</th>
+          <th class="text-center">Acoes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let admin of admins">
+          <td class="bold">{{ admin.name }}</td>
+          <td>{{ admin.email }}</td>
+          <td>{{ admin.companyName }}</td>
+          <td>
+            <span class="badge" [ngClass]="admin.isActive ? 'bg-success' : 'bg-danger'">
+              {{ admin.isActive ? 'Ativo' : 'Inativo' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="action-buttons">
+              <button class="btn-icon" title="Editar" (click)="openEditModal(admin)">&#9998;</button>
+              <button
+                class="btn-icon"
+                *ngIf="admin.isActive"
+                title="Desativar"
+                (click)="deactivateAdmin(admin)">&#128465;</button>
+              <button
+                class="btn-icon"
+                *ngIf="!admin.isActive"
+                title="Reativar"
+                (click)="reactivateAdmin(admin)">&#8635;</button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="admins.length === 0">
+          <td colspan="5" class="empty">Nenhum administrador encontrado.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty" *ngIf="loading">Carregando administradores...</div>
+  </div>
+
+  <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="success-msg" *ngIf="successMessage">{{ successMessage }}</p>
+</div>
+
+<div class="modal-overlay" *ngIf="showEditModal" (click)="$event.target === $event.currentTarget && closeEditModal()">
+  <div class="modal-card">
+    <header class="modal-header">
+      <h2>Editar Administrador</h2>
+      <button class="btn-close" (click)="closeEditModal()">x</button>
+    </header>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nome completo</label>
+        <input class="modern-select" type="text" [(ngModel)]="editForm.adminFullName" />
+      </div>
+
+      <div class="form-group" style="margin-top: 12px;">
+        <label>E-mail (login)</label>
+        <input class="modern-select" type="email" [(ngModel)]="editForm.adminEmail" />
+      </div>
+    </div>
+
+    <footer class="modal-footer">
+      <button class="btn-secondary" (click)="closeEditModal()" [disabled]="saving">Cancelar</button>
+      <button class="btn-confirm" (click)="saveAdminEdit()" [disabled]="saving">
+        {{ saving ? 'Salvando...' : 'Salvar Alteracoes' }}
+      </button>
+    </footer>
+  </div>
+</div>

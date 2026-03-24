@@ -6,6 +6,7 @@ namespace Omega.FleetManagement.Application.DTOs
         Guid DriverId,
         Guid VehicleId,
         string LoadingLocation,
+        string UnloadingLocation,
         DateTime LoadingDate,
         decimal StartKm,
         decimal FreightValue,

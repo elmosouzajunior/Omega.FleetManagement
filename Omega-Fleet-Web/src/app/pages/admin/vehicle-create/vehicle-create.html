@@ -1,0 +1,57 @@
+<div class="container mt-4">
+  <div class="card shadow border-0">
+    <div class="card-header bg-success text-white">
+      <h5 class="mb-0">➕ Novo Veículo</h5>
+    </div>
+    <div class="card-body">
+      <form [formGroup]="vehicleForm" (ngSubmit)="onSubmit()">
+        <div class="row">
+          <div class="col-md-2 mb-3">
+            <label class="form-label fw-bold">
+              Placa <span class="text-danger">*</span>
+            </label>
+            <input type="text" class="form-control text-uppercase"
+              [class.is-invalid]="vehicleForm.get('licensePlate')?.invalid && vehicleForm.get('licensePlate')?.touched"
+              formControlName="licensePlate" placeholder="ABC1D23" (input)="onLicensePlateInput($event)">
+
+            @if (vehicleForm.get('licensePlate')?.touched && vehicleForm.get('licensePlate')?.invalid) {
+            <div class="text-danger small mt-1">
+              @if (vehicleForm.get('licensePlate')?.errors?.['required']) {
+              <span>Obrigatório.</span>
+              } @else if (vehicleForm.get('licensePlate')?.errors?.['pattern']) {
+              <span>Formato inválido.</span>
+              }
+            </div>
+            }
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label class="form-label fw-bold">Marca <span class="text-danger">*</span></label>
+            <select class="form-select"
+              [class.is-invalid]="vehicleForm.get('manufacturer')?.invalid && vehicleForm.get('manufacturer')?.touched"
+              formControlName="manufacturer">
+              <option value="" disabled selected>Selecione uma marca...</option>
+              @for (item of manufacturers; track item.id) {
+              <option [value]="item.name">{{ item.name }}</option>
+              }
+            </select>
+            @if (vehicleForm.get('manufacturer')?.touched && vehicleForm.get('manufacturer')?.invalid) {
+            <div class="text-danger small mt-1">Selecione uma marca da lista.</div>
+            }
+          </div>
+
+          <div class="col-md-2 mb-3">
+            <label class="form-label fw-bold">Cor</label>
+            <input type="text" class="form-control" formControlName="color" placeholder="Ex: Azul">
+          </div>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+          <button type="submit" [disabled]="vehicleForm.invalid" class="btn btn-success px-5">
+            Salvar Veículo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

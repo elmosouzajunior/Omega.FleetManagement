@@ -1,0 +1,53 @@
+﻿<div class="list-container">
+  <header class="list-header">
+    <div class="title-area">
+      <h1>Cadastrar Empresa</h1>
+      <button class="btn-secondary" routerLink="/Master/companies">Voltar</button>
+    </div>
+  </header>
+
+  <div class="table-card">
+    <form [formGroup]="companyForm" (ngSubmit)="onSubmit()">
+      <section class="form-section">
+        <h2>Dados da Empresa</h2>
+        <div class="form-grid two-cols">
+          <div class="form-group">
+            <label>Nome da Empresa</label>
+            <input class="modern-select" formControlName="companyName" placeholder="Ex: Pet Transportes" />
+          </div>
+          <div class="form-group">
+            <label>CNPJ (apenas numeros)</label>
+            <input class="modern-select" formControlName="cnpj" maxlength="14" placeholder="00000000000000" />
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>Administrador Principal</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nome Completo</label>
+            <input class="modern-select" formControlName="adminFullName" placeholder="Ex: Joao Silva" />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input class="modern-select" formControlName="adminEmail" placeholder="admin@empresa.com" />
+          </div>
+          <div class="form-group">
+            <label>Senha Provisoria</label>
+            <input class="modern-select" type="password" formControlName="adminPassword" placeholder="Minimo 6 caracteres" />
+          </div>
+        </div>
+      </section>
+
+      <p *ngIf="errorMessage" class="error-msg">{{ errorMessage }}</p>
+
+      <footer class="form-actions">
+        <button type="button" class="btn-secondary" routerLink="/Master/companies" [disabled]="loading">Cancelar</button>
+        <button type="submit" class="btn-new" [disabled]="companyForm.invalid || loading">
+          {{ loading ? 'Salvando...' : 'Finalizar Cadastro' }}
+        </button>
+      </footer>
+    </form>
+  </div>
+</div>

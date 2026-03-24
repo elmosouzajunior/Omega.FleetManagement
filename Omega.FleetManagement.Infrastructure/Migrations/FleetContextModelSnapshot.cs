@@ -293,18 +293,23 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                     b.Property<string>("ReceiptPath")
                         .HasColumnType("text");
 
-                    b.Property<Guid>("TripId")
+                    b.Property<Guid?>("TripId")
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Value")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<Guid?>("VehicleId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ExpenseTypeId");
 
                     b.HasIndex("TripId");
+
+                    b.HasIndex("VehicleId");
 
                     b.ToTable("expenses", (string)null);
                 });
@@ -622,12 +627,18 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                     b.HasOne("Omega.FleetManagement.Domain.Entities.Trip", "Trip")
                         .WithMany("Expenses")
                         .HasForeignKey("TripId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Omega.FleetManagement.Domain.Entities.Vehicle", "Vehicle")
+                        .WithMany("Expenses")
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("ExpenseType");
 
                     b.Navigation("Trip");
+
+                    b.Navigation("Vehicle");
                 });
 
             modelBuilder.Entity("Omega.FleetManagement.Domain.Entities.Trip", b =>
@@ -680,6 +691,11 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("Omega.FleetManagement.Domain.Entities.Trip", b =>
+                {
+                    b.Navigation("Expenses");
+                });
+
+            modelBuilder.Entity("Omega.FleetManagement.Domain.Entities.Vehicle", b =>
                 {
                     b.Navigation("Expenses");
                 });

@@ -38,9 +38,10 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
             return await _context.Drivers.Where(d => d.CompanyId == companyId).ToListAsync();
         }
 
-        public async Task UpdateAsync(Driver driver)
+        public Task UpdateAsync(Driver driver)
         {
             _context.Drivers.Update(driver);
+            return Task.CompletedTask;
         }
     }
 }

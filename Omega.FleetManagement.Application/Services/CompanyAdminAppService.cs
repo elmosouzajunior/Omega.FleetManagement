@@ -6,6 +6,7 @@ using Omega.FleetManagement.Domain.Entities;
 using Omega.FleetManagement.Domain.Interfaces;
 using Omega.FleetManagement.Infrastructure.Data.Context;
 using Omega.FleetManagement.Infrastructure.Data.Identity;
+using System.ComponentModel.DataAnnotations;
 namespace Omega.FleetManagement.Application.Services
 {
     public class CompanyAdminAppService : ICompanyAdminAppService
@@ -23,16 +24,25 @@ namespace Omega.FleetManagement.Application.Services
 
         public async Task<List<CompanyAdminResponse>> GetAllCompanyAdmins()
         {
-            return await _context.CompanyAdmins
+            var admins = await _context.CompanyAdmins
+                .Include(a => a.Company)
                 .OrderBy(u => u.Name)
-                .Select(u => new CompanyAdminResponse
-                (
-                    u.Name,
-                    u.Email,
-                    u.IsActive,
-                    u.Company.Name
-                ))
                 .ToListAsync();
+
+            var usersLookup = await _userManager.Users
+                .Select(u => new { Id = u.Id.ToString(), u.Email })
+                .ToDictionaryAsync(u => u.Id, u => u.Email ?? string.Empty);
+
+            return admins
+                .Select(a => new CompanyAdminResponse(
+                    a.Id,
+                    a.Name,
+                    !string.IsNullOrWhiteSpace(a.IdentityUserId) && usersLookup.TryGetValue(a.IdentityUserId, out var email)
+                        ? email
+                        : a.Email,
+                    a.IsActive,
+                    a.Company.Name))
+                .ToList();
         }
 
         public async Task<bool> CreateCompanyAdmin(CreateCompanyAdminRequest request)
@@ -41,12 +51,24 @@ namespace Omega.FleetManagement.Application.Services
 
             try
             {
-                // 1. Criar o objeto do Identity
+                var fullName = (request.AdminFullName ?? string.Empty).Trim();
+                var email = (request.AdminEmail ?? string.Empty).Trim().ToLowerInvariant();
+
+                if (string.IsNullOrWhiteSpace(fullName))
+                    throw new ArgumentException("Nome é obrigatório.");
+
+                if (string.IsNullOrWhiteSpace(email))
+                    throw new ArgumentException("E-mail é obrigatório.");
+
+                if (!new EmailAddressAttribute().IsValid(email))
+                    throw new ArgumentException("E-mail inválido.");
+
                 var user = new ApplicationUser
                 {
-                    UserName = request.AdminEmail,
-                    Email = request.AdminEmail,
-                    Name = request.AdminFullName                    
+                    UserName = email,
+                    Email = email,
+                    Name = fullName,
+                    CompanyId = request.CompanyId
                 };
 
                 // 2. Salvar no Identity (isso já faz o Hash da senha automaticamente)
@@ -65,8 +87,8 @@ namespace Omega.FleetManagement.Application.Services
                 var companyAdmin = new CompanyAdmin
                 {
                     Id = Guid.NewGuid(),
-                    Name = request.AdminFullName,
-                    Email = request.AdminEmail,
+                    Name = fullName,
+                    Email = email,
                     CompanyId = request.CompanyId,
                     IdentityUserId = user.Id.ToString(),
                 };
@@ -83,5 +105,109 @@ namespace Omega.FleetManagement.Application.Services
                 throw;
             }
         }
+
+        public async Task<bool> UpdateCompanyAdminAsync(Guid id, UpdateCompanyAdminRequest request)
+        {
+            var admin = await _context.CompanyAdmins.FirstOrDefaultAsync(a => a.Id == id);
+            if (admin == null)
+                return false;
+
+            var fullName = (request.AdminFullName ?? string.Empty).Trim();
+            var email = (request.AdminEmail ?? string.Empty).Trim().ToLowerInvariant();
+
+            if (string.IsNullOrWhiteSpace(fullName))
+                throw new ArgumentException("Nome é obrigatório.");
+
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("E-mail é obrigatório.");
+
+            if (!new EmailAddressAttribute().IsValid(email))
+                throw new ArgumentException("E-mail inválido.");
+
+            admin.Name = fullName;
+            admin.Email = email;
+
+            if (!string.IsNullOrWhiteSpace(admin.IdentityUserId))
+            {
+                var user = await _userManager.FindByIdAsync(admin.IdentityUserId);
+                if (user != null)
+                {
+                    var existingUserWithEmail = await _userManager.FindByEmailAsync(email);
+                    if (existingUserWithEmail != null && existingUserWithEmail.Id != user.Id)
+                        throw new ArgumentException("Já existe um administrador com este e-mail.");
+
+                    user.Name = fullName;
+                    user.UserName = email;
+                    user.Email = email;
+                    var identityResult = await _userManager.UpdateAsync(user);
+                    if (!identityResult.Succeeded)
+                    {
+                        var message = identityResult.Errors.FirstOrDefault()?.Description
+                            ?? "Não foi possível atualizar o administrador.";
+                        throw new ArgumentException(message);
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DeactivateCompanyAdminAsync(Guid id)
+        {
+            var admin = await _context.CompanyAdmins.FirstOrDefaultAsync(a => a.Id == id);
+            if (admin == null)
+                return false;
+
+            admin.Deactivate();
+
+            if (!string.IsNullOrWhiteSpace(admin.IdentityUserId))
+            {
+                var user = await _userManager.FindByIdAsync(admin.IdentityUserId);
+                if (user != null)
+                {
+                    user.IsActive = false;
+                    var identityResult = await _userManager.UpdateAsync(user);
+                    if (!identityResult.Succeeded)
+                    {
+                        var message = identityResult.Errors.FirstOrDefault()?.Description
+                            ?? "Não foi possível desativar o administrador.";
+                        throw new ArgumentException(message);
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ReactivateCompanyAdminAsync(Guid id)
+        {
+            var admin = await _context.CompanyAdmins.FirstOrDefaultAsync(a => a.Id == id);
+            if (admin == null)
+                return false;
+
+            admin.Reactivate();
+
+            if (!string.IsNullOrWhiteSpace(admin.IdentityUserId))
+            {
+                var user = await _userManager.FindByIdAsync(admin.IdentityUserId);
+                if (user != null)
+                {
+                    user.IsActive = true;
+                    var identityResult = await _userManager.UpdateAsync(user);
+                    if (!identityResult.Succeeded)
+                    {
+                        var message = identityResult.Errors.FirstOrDefault()?.Description
+                            ?? "Não foi possível reativar o administrador.";
+                        throw new ArgumentException(message);
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
     }
 }

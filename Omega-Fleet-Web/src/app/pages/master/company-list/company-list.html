@@ -1,0 +1,86 @@
+﻿<div class="list-container">
+  <header class="list-header">
+    <div class="title-area">
+      <h1>Gestao de Empresas</h1>
+      <button routerLink="/Master/companies/new" class="btn-new">Cadastrar Empresa</button>
+    </div>
+
+    <div class="filters-bar">
+      <span class="count"><strong>{{ companies.length }}</strong> empresas encontradas</span>
+    </div>
+  </header>
+
+  <div class="card table-card">
+    <table class="modern-table" *ngIf="!loading">
+      <thead>
+        <tr>
+          <th>Empresa</th>
+          <th>CNPJ</th>
+          <th>Status</th>
+          <th class="text-center">Acoes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let company of companies; trackBy: trackByCompanyId">
+          <td class="bold">{{ company.name }}</td>
+          <td class="bold">{{ company.cnpj }}</td>
+          <td>
+            <span class="badge" [ngClass]="company.isActive ? 'bg-success' : 'bg-danger'">
+              {{ company.isActive ? 'Ativo' : 'Inativo' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="action-buttons">
+              <button class="btn-icon" title="Editar Empresa" (click)="openEditModal(company)">&#9998;</button>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngIf="companies.length === 0">
+          <td colspan="4" class="empty">Nenhuma empresa encontrada.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty" *ngIf="loading">Carregando empresas...</div>
+  </div>
+
+  <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+</div>
+
+<div class="modal-overlay" *ngIf="showEditModal" (click)="$event.target === $event.currentTarget && closeEditModal()">
+  <div class="modal-card" *ngIf="companyToEdit">
+    <header class="modal-header">
+      <h2>Editar Empresa</h2>
+      <button class="btn-close" (click)="closeEditModal()">x</button>
+    </header>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nome da Empresa</label>
+        <input class="modern-select" type="text" [(ngModel)]="companyToEdit.name" />
+      </div>
+
+      <div class="form-group" style="margin-top: 12px;">
+        <label>CNPJ</label>
+        <input class="modern-select" type="text" [(ngModel)]="companyToEdit.cnpj" />
+      </div>
+
+      <div class="form-group" style="margin-top: 12px;">
+        <label>Status</label>
+        <select class="modern-select" [(ngModel)]="companyToEdit.isActive">
+          <option [ngValue]="true">Ativa</option>
+          <option [ngValue]="false">Inativa</option>
+        </select>
+      </div>
+    </div>
+
+    <footer class="modal-footer">
+      <button class="btn-secondary" (click)="closeEditModal()" [disabled]="saving">Cancelar</button>
+      <button class="btn-confirm" (click)="saveCompanyEdit()" [disabled]="saving">
+        {{ saving ? 'Salvando...' : 'Salvar Alteracoes' }}
+      </button>
+    </footer>
+  </div>
+</div>
+

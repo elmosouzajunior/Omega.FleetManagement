@@ -4,38 +4,44 @@ namespace Omega.FleetManagement.Domain.Entities;
 
 public class Expense : Entity
 {
-    public string Description { get; private set; }
+    public string Description { get; private set; } = string.Empty;
     public decimal Value { get; private set; }
     public DateTime Date { get; private set; }
     public string? ReceiptPath { get; private set; }
     public bool IsApproved { get; private set; }
 
     // Chaves Estrangeiras (Foreign Keys)
-    public Guid TripId { get; private set; }
+    public Guid? TripId { get; private set; }
+    public Guid? VehicleId { get; private set; }
     public Guid ExpenseTypeId { get; private set; }
 
     // Propriedades de Navegação para o Entity Framework
-    public virtual Trip Trip { get; private set; }
-    public virtual ExpenseType ExpenseType { get; private set; }
+    public virtual Trip? Trip { get; private set; }
+    public virtual Vehicle? Vehicle { get; private set; }
+    public virtual ExpenseType ExpenseType { get; private set; } = null!;
 
-    // Construtor principal para criar uma nova despesa vinculada a uma viagem.
+    // Construtor principal para criar uma nova despesa vinculada a uma viagem ou veículo.
     public Expense(
         Guid companyId,
-        Guid tripId,
         Guid expenseTypeId,
         string description,
         decimal value,
         DateTime date,
+        Guid? tripId = null,
+        Guid? vehicleId = null,
         bool isApproved = false,
         string? receiptPath = null)
         : base(companyId)
     {
-        if (tripId == Guid.Empty) throw new ArgumentException("A despesa deve estar vinculada a uma viagem.");
         if (expenseTypeId == Guid.Empty) throw new ArgumentException("O tipo de despesa deve ser informado.");
+        if ((tripId is null && vehicleId is null) || (tripId is not null && vehicleId is not null))
+            throw new ArgumentException("A despesa deve estar vinculada a uma viagem ou a um veículo.");
 
         TripId = tripId;
+        VehicleId = vehicleId;
         ExpenseTypeId = expenseTypeId;
         Date = date;
+        IsApproved = isApproved;
         ReceiptPath = receiptPath;
 
         SetDescription(description);
@@ -62,6 +68,14 @@ public class Expense : Entity
             throw new ArgumentException("O valor da despesa deve ser maior que zero.");
 
         Value = value;
+    }
+
+    public void SetExpenseType(Guid expenseTypeId)
+    {
+        if (expenseTypeId == Guid.Empty)
+            throw new ArgumentException("O tipo de despesa deve ser informado.");
+
+        ExpenseTypeId = expenseTypeId;
     }
 
     public void UpdateReceipt(string? path)

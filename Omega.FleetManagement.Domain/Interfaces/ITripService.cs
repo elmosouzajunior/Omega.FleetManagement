@@ -9,10 +9,14 @@ namespace Omega.FleetManagement.Domain.Interfaces
             Guid driverId,
             Guid vehicleId,
             string loadingLocation,
+            string unloadingLocation,
             DateTime loadingDate,
             decimal startKm,
             decimal freightValue,
-            string attachmentPath
+            string? attachmentPath
         );
+        Task<Trip> FinishTripAsync(Guid tripId, Guid companyId, DateTime unloadingDate, string? unloadingLocation, decimal finishKm);
+        Task<Trip> ReopenTripAsync(Guid tripId, Guid companyId);
+        Task<Trip> CancelTripAsync(Guid tripId, Guid companyId);
     }
 }

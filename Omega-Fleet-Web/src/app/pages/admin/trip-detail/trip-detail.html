@@ -1,0 +1,218 @@
+<div class="trip-detail-container">
+  <div *ngIf="isLoading" class="state-card">Carregando detalhes da viagem...</div>
+
+  <div *ngIf="!isLoading && pageError" class="state-card error">
+    <p>{{ pageError }}</p>
+    <button class="btn-secondary" (click)="goBack()">Voltar</button>
+  </div>
+
+  <ng-container *ngIf="!isLoading && !pageError && trip">
+    <header class="detail-header">
+      <div class="title-wrap">
+        <h1>Detalhes da Viagem</h1>
+        <p>
+          {{ trip.loadingLocation || '-' }} -> {{ trip.unloadingLocation || 'Destino nao informado' }}
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn-secondary" (click)="goBack()">Voltar</button>
+        <button class="btn-primary" (click)="launchExpense()" [disabled]="isTripClosed">Lancar Despesa</button>
+        <button class="btn-primary success" *ngIf="isTripOpen" (click)="openFinishModal()">Finalizar</button>
+        <button class="btn-primary warning" *ngIf="isTripClosed" (click)="reopenTrip()" [disabled]="reopeningTrip">
+          {{ reopeningTrip ? 'Reabrindo...' : 'Reabrir Viagem' }}
+        </button>
+        <button class="btn-danger" *ngIf="isTripOpen" (click)="cancelTrip()">Cancelar</button>
+      </div>
+    </header>
+
+    <section class="stats-grid">
+      <article class="stat-card">
+        <span class="label">Status</span>
+        <strong [class.open]="isTripOpen" [class.closed]="isTripClosed">
+          {{ isTripOpen ? 'ABERTA' : 'ENCERRADA' }}
+        </strong>
+      </article>
+      <article class="stat-card">
+        <span class="label">Frete Bruto</span>
+        <strong>{{ trip.freightValue | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+      </article>
+      <article class="stat-card">
+        <span class="label">Valor da Comissao</span>
+        <strong class="negative">{{ commissionValue | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+      </article>
+      <article class="stat-card">
+        <span class="label">Total de Despesas</span>
+        <strong class="negative">{{ totalExpenses | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+      </article>
+      <article class="stat-card">
+        <span class="label">Resultado Liquido</span>
+        <strong [class.negative]="netFreight < 0">{{ netFreight | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+      </article>
+    </section>
+
+    <section class="content-grid">
+      <article class="panel">
+        <h2>Abertura</h2>
+        <div class="line-item">
+          <span>Motorista</span>
+          <strong>{{ trip.driver?.name || trip.driverName || '-' }}</strong>
+        </div>
+        <div class="line-item">
+          <span>Veiculo</span>
+          <strong>{{ trip.vehicle?.licensePlate || trip.vehicleLicensePlate || '-' }}</strong>
+        </div>
+        <div class="line-item">
+          <span>Local de carregamento</span>
+          <strong>{{ trip.loadingLocation || '-' }}</strong>
+        </div>
+        <div class="line-item">
+          <span>Data de carregamento</span>
+          <strong>{{ trip.loadingDate | date:'dd/MM/yyyy' }}</strong>
+        </div>
+        <div class="line-item">
+          <span>KM inicial</span>
+          <strong>{{ trip.startKm | number:'1.0-0' }} km</strong>
+        </div>
+      </article>
+
+      <article class="panel">
+        <h2>Fechamento</h2>
+        <div *ngIf="isTripClosed; else openTripState">
+          <div class="line-item">
+            <span>Data de Descarga</span>
+            <strong>{{ trip.unloadingDate | date:'dd/MM/yyyy HH:mm' }}</strong>
+          </div>
+          <div class="line-item">
+            <span>Local de descarga</span>
+            <strong>{{ trip.unloadingLocation || '-' }}</strong>
+          </div>
+          <div class="line-item">
+            <span>KM final</span>
+            <strong>{{ trip.finishKm | number:'1.0-0' }} km</strong>
+          </div>
+          <div class="line-item">
+            <span>KM rodados</span>
+            <strong>{{ mileageDriven | number:'1.0-0' }} km</strong>
+          </div>
+        </div>
+        <ng-template #openTripState>
+          <p class="open-state">A viagem esta em andamento. Finalize quando chegar ao destino.</p>
+        </ng-template>
+      </article>
+    </section>
+
+    <section class="panel expenses-panel">
+      <div class="panel-header">
+        <h2>Despesas da Viagem</h2>
+        <button class="btn-primary" (click)="launchExpense()" [disabled]="isTripClosed">Nova despesa</button>
+      </div>
+
+      <div *ngIf="expenses.length === 0" class="empty-state">
+        Nenhuma despesa lancada para esta viagem.
+      </div>
+
+      <table *ngIf="expenses.length > 0" class="expenses-table">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Descricao</th>
+            <th style="text-align:right;">Valor</th>
+            <th style="text-align:right;">A&Ccedil;&Otilde;ES</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let expense of expenses">
+            <td>{{ expense.expenseTypeName || expense.type || '-' }}</td>
+            <td>{{ expense.description || '-' }}</td>
+            <td class="value">{{ expense.value | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+            <td style="text-align:right;">
+              <button class="btn-icon" type="button" title="Editar despesa" (click)="openEditExpenseModal(expense)">✏️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </ng-container>
+</div>
+
+<div class="modal-overlay" *ngIf="showFinishModal" (click)="$event.target === $event.currentTarget && closeFinishModal()">
+  <div class="modal-card">
+    <header class="modal-header">
+      <h3>Finalizar Viagem</h3>
+      <button type="button" class="btn-close" (click)="closeFinishModal()">x</button>
+    </header>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Data Descarregamento *</label>
+        <input
+          type="text"
+          [(ngModel)]="finishForm.unloadingDate"
+          (input)="onUnloadingDateInput($event)"
+          [disabled]="savingFinish"
+          maxlength="10"
+          placeholder="DD/MM/AAAA" />
+      </div>
+
+      <div class="form-group">
+        <label>Local de descarga</label>
+        <input type="text" [(ngModel)]="finishForm.unloadingLocation" [disabled]="savingFinish" placeholder="Ex: CD Guarulhos - Docas 3" />
+      </div>
+
+      <div class="form-group">
+        <label>KM final *</label>
+        <input type="number" min="0" [(ngModel)]="finishForm.finishKm" [disabled]="savingFinish" />
+      </div>
+
+      <p *ngIf="finishError" class="error-msg">{{ finishError }}</p>
+    </div>
+
+    <footer class="modal-footer">
+      <button class="btn-secondary" type="button" (click)="closeFinishModal()" [disabled]="savingFinish">Cancelar</button>
+      <button class="btn-primary success" type="button" (click)="submitFinish()" [disabled]="savingFinish">
+        {{ savingFinish ? 'Finalizando...' : 'Confirmar fechamento' }}
+      </button>
+    </footer>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showEditExpenseModal" (click)="$event.target === $event.currentTarget && closeEditExpenseModal()">
+  <div class="modal-card">
+    <header class="modal-header">
+      <h3>Editar Despesa</h3>
+      <button type="button" class="btn-close" (click)="closeEditExpenseModal()">x</button>
+    </header>
+
+    <div class="modal-body" *ngIf="expenseToEdit">
+      <div class="form-group">
+        <label>Tipo de despesa *</label>
+        <select [(ngModel)]="expenseToEdit.expenseTypeId" [disabled]="savingExpenseEdit || loadingExpenseTypes">
+          <option value="">Selecione...</option>
+          <option *ngFor="let type of expenseTypes" [value]="type.id || type.expenseTypeId">
+            {{ type.name || type.description }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Descricao *</label>
+        <input type="text" [(ngModel)]="expenseToEdit.description" [disabled]="savingExpenseEdit" />
+      </div>
+
+      <div class="form-group">
+        <label>Valor (R$) *</label>
+        <input type="number" min="0.01" step="0.01" [(ngModel)]="expenseToEdit.value" [disabled]="savingExpenseEdit" />
+      </div>
+
+      <p *ngIf="expenseEditError" class="error-msg">{{ expenseEditError }}</p>
+    </div>
+
+    <footer class="modal-footer">
+      <button class="btn-secondary" type="button" (click)="closeEditExpenseModal()" [disabled]="savingExpenseEdit">Cancelar</button>
+      <button class="btn-primary" type="button" (click)="submitEditExpense()" [disabled]="savingExpenseEdit || loadingExpenseTypes">
+        {{ savingExpenseEdit ? 'Salvando...' : 'Salvar alteracoes' }}
+      </button>
+    </footer>
+  </div>
+</div>

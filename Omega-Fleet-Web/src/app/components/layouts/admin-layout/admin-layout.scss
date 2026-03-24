@@ -1,0 +1,134 @@
+.layout-wrapper {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: #f8fafc;
+
+  .sidebar-wrapper {
+    width: 280px;
+    height: 100%;
+    background: #1e293b;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+  }
+
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    transition: all 0.3s ease;
+  }
+
+  .navbar {
+    height: 64px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    .menu-toggle {
+      background: #f1f5f9;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: #475569;
+
+      &:hover {
+        background: #e2e8f0;
+      }
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .badge {
+        background: #3b82f6;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+      }
+
+      .page-title {
+        font-weight: 600;
+        color: #1e293b;
+      }
+    }
+
+    .user-area {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      line-height: 1.15;
+
+      .company-name {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #334155;
+        text-transform: uppercase;
+      }
+
+      .user-name {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+      }
+    }
+  }
+
+  .content-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: none;
+  }
+}
+
+:not(.menu-open) {
+  .sidebar-wrapper {
+    margin-left: -280px;
+  }
+}
+
+@media (max-width: 991px) {
+  .layout-wrapper {
+    .sidebar-wrapper {
+      position: fixed;
+      left: -280px;
+    }
+
+    &.menu-open {
+      .sidebar-wrapper {
+        left: 0;
+      }
+
+      .overlay {
+        display: block;
+      }
+    }
+
+    .main-content {
+      width: 100%;
+    }
+  }
+}

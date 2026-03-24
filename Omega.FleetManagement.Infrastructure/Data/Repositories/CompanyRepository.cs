@@ -14,5 +14,16 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
         }
 
         public IQueryable<Company> GetAllQueryable() => _context.Companies.AsNoTracking();
+
+        public async Task<Company?> GetByIdAsync(Guid id)
+        {
+            return await _context.Companies.FirstOrDefaultAsync(c => c.Id == id);
+        }
+
+        public Task UpdateAsync(Company company)
+        {
+            _context.Companies.Update(company);
+            return Task.CompletedTask;
+        }
     }
 }

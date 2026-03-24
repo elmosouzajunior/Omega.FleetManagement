@@ -1,0 +1,44 @@
+<div class="container mt-5">
+  <div class="card border-0 shadow-lg">
+    <div class="card-header bg-dark text-white p-3">
+      <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Cadastro de Motorista</h5>
+    </div>
+    <div class="card-body p-4">
+      <form [formGroup]="driverForm" (ngSubmit)="onSubmit()">
+        <div class="mb-3">
+          <label class="form-label fw-bold">Nome Completo</label>
+          <input type="text" class="form-control form-control-lg" formControlName="name"
+            placeholder="Ex: João da Silva">
+        </div>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label fw-bold">CPF (apenas números)</label>
+            <input type="text" class="form-control form-control-lg" formControlName="cpf" placeholder="00000000000">
+            <div *ngIf="driverForm.get('cpf')?.touched && driverForm.get('cpf')?.errors?.['pattern']"
+              class="text-danger small">
+              O CPF deve conter exatamente 11 dígitos.
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label fw-bold">Comissão (%)</label>
+            <div class="input-group input-group-lg">
+              <input type="number" class="form-group form-control" formControlName="commissionRate">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label fw-bold">Senha</label>
+            <div class="input-group input-group-lg">
+              <input type="text" class="form-group form-control" formControlName="password">
+            </div>
+          </div>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+          <button type="button" class="btn btn-outline-secondary px-4" (click)="driverForm.reset()">Limpar</button>
+          <button type="submit" class="btn btn-primary px-5" [disabled]="driverForm.invalid">Salvar Motorista</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

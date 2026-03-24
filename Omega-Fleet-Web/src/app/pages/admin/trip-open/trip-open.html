@@ -1,0 +1,82 @@
+<div class="list-container">
+  <div class="list-header">
+    <div class="title-area">
+      <h1>Abertura de Nova Viagem</h1>
+      <button class="btn-secondary" routerLink="/Admin/trips">Voltar</button>
+    </div>
+  </div>
+
+  <div class="table-card p-4">
+    <form [formGroup]="tripForm" (ngSubmit)="onSubmit()">
+      <div class="row">
+
+        <div class="col-md-6 mb-4">
+          <label class="form-label fw-bold">Veículo / Placa</label>
+          <select class="form-select modern-select" formControlName="vehicleId" (change)="onVehicleChange($event)">
+            <option value="" disabled selected>Selecione o veículo</option>
+            <option *ngFor="let v of activeVehicles" [value]="v.id">
+              {{ v.licensePlate }} - {{ v.manufacturer }} - {{ v.color }}
+            </option>
+          </select>
+          <small class="text-muted" *ngIf="isAdmin">Apenas veículos com motoristas vinculados aparecem aqui.</small>
+        </div>
+
+        <div class="col-md-6 mb-4">
+          <label class="form-label fw-bold">Motorista</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light"><i class="bi bi-person-badge"></i></span>
+            <input type="text" class="form-control" [value]="selectedDriverDisplay"
+              placeholder="Motorista associado aparecerá aqui" readonly>
+          </div>
+          <input type="hidden" formControlName="driverId">
+        </div>
+
+        <hr class="my-3 text-faded">
+
+        <div class="col-md-12 mb-3">
+          <label class="form-label fw-bold">Local de Carregamento</label>
+          <input type="text" class="form-control" formControlName="loadingLocation"
+            placeholder="Ex: Porto de Santos / Terminal 4">
+        </div>
+
+        <div class="col-md-12 mb-3">
+          <label class="form-label fw-bold">Destino</label>
+          <input type="text" class="form-control" formControlName="unloadingLocation"
+            placeholder="Ex: CD Guarulhos - Docas 3">
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <label class="form-label fw-bold">Data</label>
+          <input type="date" class="form-control" formControlName="loadingDate">
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <label class="form-label fw-bold">KM Inicial</label>
+          <input type="number" class="form-control" formControlName="startKm" placeholder="0">
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <label class="form-label fw-bold">Valor do Frete</label>
+          <div class="input-group">
+            <span class="input-group-text">R$</span>
+            <input type="text" class="form-control" placeholder="0,00" (input)="formatMoney($event)" #freightInput>
+          </div>
+          <input type="hidden" formControlName="freightValue">
+        </div>
+
+        <div class="col-md-12 mb-4">
+          <label class="form-label fw-bold">Comprovante / Ordem (Anexo)</label>
+          <input type="file" class="form-control" (change)="onFileSelected($event)">
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-3 mt-4">
+        <button type="button" class="btn btn-light"
+          (click)="tripForm.reset(); selectedDriverDisplay = ''">Limpar</button>
+        <button type="submit" class="btn-new" [disabled]="tripForm.invalid">
+          Confirmar e Abrir Viagem
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

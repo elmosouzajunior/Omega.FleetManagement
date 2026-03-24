@@ -1,0 +1,50 @@
+name: Web CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "Omega-Fleet-Web/**"
+      - ".github/workflows/web-deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Omega-Fleet-Web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "Omega-Fleet-Web/package-lock.json"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Inject API base URL
+        run: |
+          if [ -z "${{ secrets.WEB_API_BASE_URL }}" ]; then
+            echo "Secret WEB_API_BASE_URL is required (ex: https://api.seudominio.com/api/v1)."
+            exit 1
+          fi
+          sed -i "s|__API_BASE_URL__|${{ secrets.WEB_API_BASE_URL }}|g" src/environments/environment.prod.ts
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "Omega-Fleet-Web"
+          output_location: "dist/Omega-Fleet-Web/browser"

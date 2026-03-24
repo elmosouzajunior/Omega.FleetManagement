@@ -1,0 +1,42 @@
+name: API CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "Omega.FleetManagement.API/**"
+      - "Omega.FleetManagement.Application/**"
+      - "Omega.FleetManagement.Domain/**"
+      - "Omega.FleetManagement.Infrastructure/**"
+      - "Omega.FleetManagement.sln"
+      - ".github/workflows/api-deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore
+        run: dotnet restore Omega.FleetManagement.sln
+
+      - name: Build
+        run: dotnet build Omega.FleetManagement.sln --configuration Release --no-restore
+
+      - name: Publish API
+        run: dotnet publish Omega.FleetManagement.API/Omega.FleetManagement.API.csproj -c Release -o ./publish/api --no-build
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME_API }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_API }}
+          package: ./publish/api

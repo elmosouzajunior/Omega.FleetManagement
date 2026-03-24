@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Omega.FleetManagement.Application.DTOs;
 using Omega.FleetManagement.Application.Interfaces;
 using Omega.FleetManagement.Application.Services;
 
 namespace Omega.FleetManagement.API.Controllers
 {
+    [Authorize]
     [Route("api/v1/vehicles")]
     [ApiController]
     public class VehiclesController : ControllerBase
@@ -20,7 +22,9 @@ namespace Omega.FleetManagement.API.Controllers
         {
             try
             {
-                var companyId = Guid.Parse(User.FindFirst("CompanyId")?.Value);
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
                 await _vehicleAppService.CreateVehicleAsync(dto, companyId);
                 return Ok(new { success = true, message = "Veículo cadastrado com sucesso!" });
             }
@@ -41,7 +45,9 @@ namespace Omega.FleetManagement.API.Controllers
         {
             try
             {
-                var companyId = Guid.Parse(User.FindFirst("CompanyId")?.Value);
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
                 var vehicles = await _vehicleAppService.GetVehiclesByCompanyIdAsync(companyId);
                 if (vehicles == null || !vehicles.Any())
                     return NoContent();
@@ -55,16 +61,20 @@ namespace Omega.FleetManagement.API.Controllers
         }
 
         [HttpPatch("{id}/assign-driver")]
-        public async Task<IActionResult> AssignDriver(Guid id, [FromBody] Guid driverId)
+        public async Task<IActionResult> AssignDriver(Guid id, [FromBody] AssignDriverRequest request)
         {
             try
             {
-                var success = await _vehicleAppService.AssignDriverAsync(id, driverId);
+                var success = await _vehicleAppService.AssignDriverAsync(id, request?.DriverId);
 
                 if (!success)
                     return NotFound(new { message = "Veículo não encontrado." });
 
-                return Ok(new { message = "Motorista vinculado com sucesso!" });
+                var message = request?.DriverId == null
+                    ? "Motorista desvinculado com sucesso!"
+                    : "Motorista vinculado com sucesso!";
+
+                return Ok(new { message });
             }
             catch (Exception ex)
             {
@@ -90,5 +100,33 @@ namespace Omega.FleetManagement.API.Controllers
                 return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
             }
         }
+
+        [HttpPost("{id}/expenses")]
+        public async Task<IActionResult> AddExpense(Guid id, [FromBody] CreateVehicleExpenseRequest request)
+        {
+            try
+            {
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
+                await _vehicleAppService.AddExpenseAsync(id, request, companyId);
+                return Ok(new { success = true, message = "Despesa lançada para o veículo com sucesso." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
+                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+            }
+        }
+
+        private bool TryGetCompanyId(out Guid companyId)
+        {
+            return Guid.TryParse(User.FindFirst("CompanyId")?.Value, out companyId);
+        }
     }
 }
+

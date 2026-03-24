@@ -41,5 +41,27 @@ namespace Omega.FleetManagement.API.Controllers
             return Ok(companies);
         }
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCompanyRequest request)
+        {
+            try
+            {
+                var updated = await _companyAppService.UpdateCompanyAsync(id, request);
+                if (!updated)
+                    return NotFound(new { message = "Empresa não encontrada." });
+
+                return Ok(new { message = "Empresa atualizada com sucesso!" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
+                return StatusCode(500, new { message = "Erro interno no servidor", details = ex.Message });
+            }
+        }
+
     }
 }

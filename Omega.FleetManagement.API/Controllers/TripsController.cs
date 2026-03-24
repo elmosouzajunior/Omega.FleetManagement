@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Omega.FleetManagement.Application.DTOs;
 using Omega.FleetManagement.Application.Interfaces;
 
 namespace Omega.FleetManagement.API.Controllers
 {
+    [Authorize]
     [Route("api/v1/trips")]
     [ApiController]
     public class TripsController : ControllerBase
@@ -20,7 +22,9 @@ namespace Omega.FleetManagement.API.Controllers
         {
             try
             {
-                var companyId = Guid.Parse(User.FindFirst("CompanyId")?.Value);
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { message = "CompanyId inválido no token." });
+
                 await _tripAppService.OpenTripAsync(dto, companyId);
                 return Ok(new { message = "Viagem aberta com sucesso!" });
             }
@@ -50,7 +54,9 @@ namespace Omega.FleetManagement.API.Controllers
         {
             try
             {
-                var companyId = Guid.Parse(User.FindFirst("CompanyId")?.Value);
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { message = "CompanyId inválido no token." });
+
                 var trips = await _tripAppService.GetTripsByCompanyIdAsync(companyId);
 
                 if (trips == null || !trips.Any())
@@ -88,7 +94,9 @@ namespace Omega.FleetManagement.API.Controllers
         {
             try
             {
-                var companyId = Guid.Parse(User.FindFirst("CompanyId")?.Value);
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { message = "CompanyId inválido no token." });
+
                 var trip = await _tripAppService.GetTripByIdAsync(id, companyId);
                 if (trip == null)
                 {
@@ -112,5 +120,141 @@ namespace Omega.FleetManagement.API.Controllers
                 });
             }
         }
+
+        [HttpPatch("{id}/reopen")]
+        public async Task<IActionResult> Reopen(Guid id)
+        {
+            try
+            {
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
+                await _tripAppService.ReopenTripAsync(id, companyId);
+                return Ok(new { success = true, message = "Viagem reaberta com sucesso." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
+                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+            }
+        }
+
+        [HttpPatch("{id}/finish")]
+        public async Task<IActionResult> Finish(Guid id, [FromBody] FinishTripRequest request)
+        {
+            try
+            {
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
+                await _tripAppService.FinishTripAsync(id, request, companyId);
+                return Ok(new { success = true, message = "Viagem finalizada com sucesso." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
+                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+            }
+        }
+
+        [HttpPatch("{id}/cancel")]
+        public async Task<IActionResult> Cancel(Guid id)
+        {
+            try
+            {
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
+                await _tripAppService.CancelTripAsync(id, companyId);
+                return Ok(new { success = true, message = "Viagem cancelada com sucesso." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
+                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+            }
+        }
+
+        [HttpPost("{id}/expenses")]
+        public async Task<IActionResult> AddExpense(Guid id, [FromBody] CreateTripExpenseRequest request)
+        {
+            try
+            {
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
+                await _tripAppService.AddExpenseAsync(id, request, companyId);
+                return Ok(new { success = true, message = "Despesa lançada para a viagem com sucesso." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
+                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+            }
+        }
+
+        [HttpPut("{tripId}/expenses/{expenseId}")]
+        public async Task<IActionResult> UpdateExpense(Guid tripId, Guid expenseId, [FromBody] UpdateTripExpenseRequest request)
+        {
+            try
+            {
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
+                await _tripAppService.UpdateExpenseAsync(tripId, expenseId, request, companyId);
+                return Ok(new { success = true, message = "Despesa atualizada com sucesso." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Erro Crítico]: {ex.Message}");
+                return StatusCode(500, new { success = false, message = "Erro interno no servidor", details = ex.Message });
+            }
+        }
+
+        private bool TryGetCompanyId(out Guid companyId)
+        {
+            return Guid.TryParse(User.FindFirst("CompanyId")?.Value, out companyId);
+        }
     }
 }
+

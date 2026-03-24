@@ -1,0 +1,27 @@
+<div class="layout-wrapper" [class.menu-open]="isMenuOpen">
+  <div class="overlay" *ngIf="isMenuOpen" (click)="toggleMenu()"></div>
+
+  <div class="sidebar-wrapper" *ngIf="isMenuOpen">
+    <app-sidebar (close)="toggleMenu()"></app-sidebar>
+  </div>
+
+  <main class="main-content">
+    <header class="navbar admin-theme">
+      <button class="menu-toggle" (click)="toggleMenu()" *ngIf="!isMenuOpen">?</button>
+
+      <div class="nav-brand">
+        <span class="badge">ADMIN</span>
+        <span class="page-title">Gestao de Frotas</span>
+      </div>
+
+      <div class="user-area">
+        <span class="company-name">{{ companyName }}</span>
+        <span class="user-name">{{ userName }}</span>
+      </div>
+    </header>
+
+    <div class="content-body">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>
