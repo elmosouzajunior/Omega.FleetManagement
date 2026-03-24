@@ -36,7 +36,7 @@ namespace Omega.FleetManagement.Infrastructure.Data.Mappings
             builder.HasOne(v => v.Driver)         
                 .WithMany()                       
                 .HasForeignKey(v => v.DriverId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasMany(v => v.Expenses)
                 .WithOne(e => e.Vehicle)

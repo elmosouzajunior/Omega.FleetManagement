@@ -262,7 +262,7 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                         column: x => x.DriverId,
                         principalTable: "drivers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(

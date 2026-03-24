@@ -673,7 +673,7 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                     b.HasOne("Omega.FleetManagement.Domain.Entities.Driver", "Driver")
                         .WithMany()
                         .HasForeignKey("DriverId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Driver");
                 });
