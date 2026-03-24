@@ -2,7 +2,7 @@
 
 ## 1) Recursos mínimos no Azure
 
-- `Azure Database for PostgreSQL Flexible Server` (Burstable `B1ms`)
+- `Azure SQL Database` (`General Purpose - Serverless`)
 - `Azure Blob Storage` (container `omega-fleet-files`)
 - `Azure App Service` (Linux) para API `.NET`
 - `Azure Static Web Apps` para frontend Angular
@@ -12,7 +12,7 @@
 Defina estas **Application settings**:
 
 - `ASPNETCORE_ENVIRONMENT` = `Production`
-- `ConnectionStrings__DefaultConnection` = `<connection-string-postgres>`
+- `ConnectionStrings__DefaultConnection` = `Server=tcp:<sql-server>.database.windows.net,1433;Initial Catalog=<database-name>;Persist Security Info=False;User ID=<admin-user>;Password=<password>;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;`
 - `Jwt__Key` = `<jwt-key-forte>`
 - `Jwt__Issuer` = `OmegaFleetAPI`
 - `Jwt__Audience` = `OmegaFleetAngularApp`
@@ -28,6 +28,7 @@ Importante:
 - Se alguma connection string, senha de banco ou chave JWT já foi commitada anteriormente, faça a rotação antes do deploy.
 - Em desenvolvimento local, prefira `dotnet user-secrets` ou variáveis de ambiente para `ConnectionStrings__DefaultConnection` e `Jwt__Key`.
 - Mantenha `BootstrapAdmin__Enabled=false` em produção. Se precisar criar um `Master`, faça isso de forma controlada e temporária, com `BootstrapAdmin__Email` e `BootstrapAdmin__Password` vindos de secret externo.
+- Para o banco, prefira `Azure SQL Database - Serverless` com autopause habilitado para reduzir custo em ambientes de baixa utilização.
 
 ## 3) Secrets no GitHub Actions
 
@@ -49,11 +50,21 @@ Antes do primeiro uso em produção, aplique as migrações no banco:
 dotnet ef database update --project Omega.FleetManagement.Infrastructure --startup-project Omega.FleetManagement.API
 ```
 
+Observação:
+
+- A solução agora usa `SQL Server / Azure SQL` como provider EF Core.
+- Se você estiver em uma máquina nova, execute antes:
+
+```bash
+dotnet tool restore
+```
+
 ## 5) Observações
 
 - `appsettings.Production.json` já foi criado com placeholders.
 - `appsettings.json` também deve permanecer sem segredos reais versionados.
 - O bootstrap do usuário `Master` agora depende de configuração explícita e não deve permanecer ativo após a criação inicial.
+- As migrations antigas de PostgreSQL foram substituídas por uma migration inicial nova para SQL Server/Azure SQL.
 - O upload de arquivos agora suporta provider configurável:
   - `Local` (desenvolvimento)
   - `AzureBlob` (produção)

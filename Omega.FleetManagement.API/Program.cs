@@ -20,7 +20,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<FleetContext>(options =>
 {
-    options.UseNpgsql(connectionString, b => b.MigrationsAssembly("Omega.FleetManagement.Infrastructure"));
+    options.UseSqlServer(connectionString, b => b.MigrationsAssembly("Omega.FleetManagement.Infrastructure"));
 });
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
