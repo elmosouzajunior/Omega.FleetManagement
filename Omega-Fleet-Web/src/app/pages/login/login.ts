@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
@@ -24,6 +25,8 @@ export class LoginComponent implements OnInit {
   }
 
   onLogin(): void {
+    this.errorMessage = '';
+
     if (this.loginForm.valid) {
       this.loading = true;
 
@@ -79,7 +82,27 @@ export class LoginComponent implements OnInit {
               this.router.navigate(['/Admin/dashboard']);
             }
           }
-        }            
+        },
+        error: (error: unknown) => {
+          this.loading = false;
+
+          if (error instanceof Error && error.message === 'API_BASE_URL_NOT_CONFIGURED') {
+            this.errorMessage = 'Configuracao da API nao encontrada no ambiente de producao.';
+            return;
+          }
+
+          if (error instanceof HttpErrorResponse) {
+            if (error.status === 0) {
+              this.errorMessage = 'Nao foi possivel conectar com a API. Verifique a URL da API e o CORS em producao.';
+              return;
+            }
+
+            this.errorMessage = error.error?.message || 'Falha ao realizar login.';
+            return;
+          }
+
+          this.errorMessage = 'Falha inesperada ao realizar login.';
+        }
       });
     }
   }
