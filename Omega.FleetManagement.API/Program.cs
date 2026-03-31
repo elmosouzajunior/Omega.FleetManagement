@@ -20,7 +20,14 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<FleetContext>(options =>
 {
-    options.UseSqlServer(connectionString, b => b.MigrationsAssembly("Omega.FleetManagement.Infrastructure"));
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.MigrationsAssembly("Omega.FleetManagement.Infrastructure");
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorNumbersToAdd: null);
+    });
 });
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
