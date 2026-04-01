@@ -12,7 +12,6 @@ import { VehicleService } from '../../../services/vehicle';
 export class VehicleCreateComponent {
   vehicleForm: FormGroup;
 
-  // Lista estática que futuramente virá do Backend
   manufacturers = [
     { id: 1, name: 'DAF' },
     { id: 2, name: 'Iveco' },
@@ -22,7 +21,6 @@ export class VehicleCreateComponent {
     { id: 6, name: 'Volvo' }
   ];
 
-  // Regex corrigido: 3 letras, 1 número, 1 letra/número, 2 números
   private readonly licensePlatePattern = /^[A-Za-z]{3}[0-9][A-Za-z0-9][0-9]{2}$/;
 
   constructor(private fb: FormBuilder, private vehicleService: VehicleService) {
@@ -33,7 +31,6 @@ export class VehicleCreateComponent {
     });
   }
 
-  // Transforma o que o usuário digita em Maiúsculas em tempo real
   onLicensePlateInput(event: any) {
     const input = event.target as HTMLInputElement;
     const uppercaseValue = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -42,17 +39,7 @@ export class VehicleCreateComponent {
 
   onSubmit() {
     if (this.vehicleForm.valid) {
-      const rawValue = this.vehicleForm.value;
-
-      const vehicleData = {
-        ...rawValue,
-        // parseInt garante um número inteiro (Ano)
-        year: parseInt(rawValue.year, 10),
-        // parseFloat garante um número com decimais se necessário (KM)
-        currentKm: parseFloat(rawValue.currentKm)
-      };
-
-      console.log('Objeto sendo enviado:', vehicleData); // Verifique no console se não há aspas nos números
+      const vehicleData = this.vehicleForm.getRawValue();
 
       this.vehicleService.create(vehicleData).subscribe({
         next: () => {
@@ -61,8 +48,7 @@ export class VehicleCreateComponent {
         },
         error: (err) => {
           console.error('Erro detalhado da API:', err);
-          // Tente exibir a mensagem vinda do servidor
-          alert('Erro: ' + (err.error?.title || 'Falha na validação dos dados'));
+          alert('Erro: ' + (err.error?.message || err.error?.title || 'Falha na validacao dos dados'));
         }
       });
     }
