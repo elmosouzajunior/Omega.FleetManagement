@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Omega.FleetManagement.Application.DTOs;
 using Omega.FleetManagement.Application.Interfaces;
 using Omega.FleetManagement.Domain.Entities;
@@ -29,57 +30,57 @@ namespace Omega.FleetManagement.Application.Services
 
         public async Task<bool> RegisterCompanyAndAdmin(CreateCompanyRequest request)
         {
-            // Iniciamos uma transação para garantir atomicidade
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
 
-            try
+            return await executionStrategy.ExecuteAsync(async () =>
             {
-                // 1. Criar a Entidade Company (Domain)
-                var company = new Company(request.CompanyName, request.Cnpj);
-                
-                _context.Companies.Add(company);
-                await _context.SaveChangesAsync();
+                await using var transaction = await _context.Database.BeginTransactionAsync();
 
-                // 2. Criar o Login no Identity (Infrastructure)
-                var identityUser = new ApplicationUser
+                try
                 {
-                    UserName = request.AdminEmail,
-                    Name = request.AdminFullName,
-                    CompanyId = company.Id,
-                    Email = request.AdminEmail
-                };
+                    var company = new Company(request.CompanyName, request.Cnpj);
 
-                var identityResult = await _userManager.CreateAsync(identityUser, request.AdminPassword);
+                    _context.Companies.Add(company);
+                    await _context.SaveChangesAsync();
 
-                if (!identityResult.Succeeded)
+                    var identityUser = new ApplicationUser
+                    {
+                        UserName = request.AdminEmail,
+                        Name = request.AdminFullName,
+                        CompanyId = company.Id,
+                        Email = request.AdminEmail
+                    };
+
+                    var identityResult = await _userManager.CreateAsync(identityUser, request.AdminPassword);
+
+                    if (!identityResult.Succeeded)
+                    {
+                        await transaction.RollbackAsync();
+                        return false;
+                    }
+
+                    await _userManager.AddToRoleAsync(identityUser, "CompanyAdmin");
+
+                    var domainAdmin = new CompanyAdmin
+                    {
+                        Name = request.AdminFullName,
+                        Email = request.AdminEmail,
+                        CompanyId = company.Id,
+                        IdentityUserId = identityUser.Id.ToString()
+                    };
+
+                    _context.CompanyAdmins.Add(domainAdmin);
+                    await _context.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch
                 {
                     await transaction.RollbackAsync();
-                    return false;
+                    throw;
                 }
-
-                // 3. Vincular a Role de Admin da Empresa
-                await _userManager.AddToRoleAsync(identityUser, "CompanyAdmin");
-
-                // 4. Criar a Entidade CompanyAdmin (Domain - Solução 2)
-                var domainAdmin = new CompanyAdmin
-                {
-                    Name = request.AdminFullName,
-                    Email = request.AdminEmail,
-                    CompanyId = company.Id,
-                    IdentityUserId = identityUser.Id.ToString() // A ponte entre os mundos
-                };
-                _context.CompanyAdmins.Add(domainAdmin);
-                await _context.SaveChangesAsync();
-
-                // Se tudo deu certo, confirmamos no banco
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+            });
         }
 
         public Task<IEnumerable<CompanyResponse>> GetAllCompanies()

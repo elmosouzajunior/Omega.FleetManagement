@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Omega.FleetManagement.Application.DTOs;
 using Omega.FleetManagement.Application.Interfaces;
@@ -7,6 +7,7 @@ using Omega.FleetManagement.Domain.Interfaces;
 using Omega.FleetManagement.Infrastructure.Data.Context;
 using Omega.FleetManagement.Infrastructure.Data.Identity;
 using System.ComponentModel.DataAnnotations;
+
 namespace Omega.FleetManagement.Application.Services
 {
     public class CompanyAdminAppService : ICompanyAdminAppService
@@ -47,63 +48,65 @@ namespace Omega.FleetManagement.Application.Services
 
         public async Task<bool> CreateCompanyAdmin(CreateCompanyAdminRequest request)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
 
-            try
+            return await executionStrategy.ExecuteAsync(async () =>
             {
-                var fullName = (request.AdminFullName ?? string.Empty).Trim();
-                var email = (request.AdminEmail ?? string.Empty).Trim().ToLowerInvariant();
+                await using var transaction = await _context.Database.BeginTransactionAsync();
 
-                if (string.IsNullOrWhiteSpace(fullName))
-                    throw new ArgumentException("Nome é obrigatório.");
-
-                if (string.IsNullOrWhiteSpace(email))
-                    throw new ArgumentException("E-mail é obrigatório.");
-
-                if (!new EmailAddressAttribute().IsValid(email))
-                    throw new ArgumentException("E-mail inválido.");
-
-                var user = new ApplicationUser
+                try
                 {
-                    UserName = email,
-                    Email = email,
-                    Name = fullName,
-                    CompanyId = request.CompanyId
-                };
+                    var fullName = (request.AdminFullName ?? string.Empty).Trim();
+                    var email = (request.AdminEmail ?? string.Empty).Trim().ToLowerInvariant();
 
-                // 2. Salvar no Identity (isso já faz o Hash da senha automaticamente)
-                var result = await _userManager.CreateAsync(user, request.AdminPassword);
+                    if (string.IsNullOrWhiteSpace(fullName))
+                        throw new ArgumentException("Nome é obrigatório.");
 
-                if (!result.Succeeded)
+                    if (string.IsNullOrWhiteSpace(email))
+                        throw new ArgumentException("E-mail é obrigatório.");
+
+                    if (!new EmailAddressAttribute().IsValid(email))
+                        throw new ArgumentException("E-mail inválido.");
+
+                    var user = new ApplicationUser
+                    {
+                        UserName = email,
+                        Email = email,
+                        Name = fullName,
+                        CompanyId = request.CompanyId
+                    };
+
+                    var result = await _userManager.CreateAsync(user, request.AdminPassword);
+
+                    if (!result.Succeeded)
+                    {
+                        await transaction.RollbackAsync();
+                        return false;
+                    }
+
+                    await _userManager.AddToRoleAsync(user, "CompanyAdmin");
+
+                    var companyAdmin = new CompanyAdmin
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = fullName,
+                        Email = email,
+                        CompanyId = request.CompanyId,
+                        IdentityUserId = user.Id.ToString(),
+                    };
+
+                    _context.CompanyAdmins.Add(companyAdmin);
+                    await _context.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch
                 {
                     await transaction.RollbackAsync();
-                    return false;
+                    throw;
                 }
-
-                // 3. Adicionar à Role de Admin de Empresa
-                await _userManager.AddToRoleAsync(user, "CompanyAdmin");
-
-                // 4. Salvar na tabela específica do Domain (CompanyAdmins)
-                var companyAdmin = new CompanyAdmin
-                {
-                    Id = Guid.NewGuid(),
-                    Name = fullName,
-                    Email = email,
-                    CompanyId = request.CompanyId,
-                    IdentityUserId = user.Id.ToString(),
-                };
-
-                _context.CompanyAdmins.Add(companyAdmin);
-                await _context.SaveChangesAsync();
-
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+            });
         }
 
         public async Task<bool> UpdateCompanyAdminAsync(Guid id, UpdateCompanyAdminRequest request)
@@ -208,6 +211,5 @@ namespace Omega.FleetManagement.Application.Services
             await _context.SaveChangesAsync();
             return true;
         }
-
     }
 }
