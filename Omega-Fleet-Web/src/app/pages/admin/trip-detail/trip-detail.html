@@ -276,8 +276,8 @@
 
     <footer class="modal-footer">
       <button class="btn-secondary" type="button" (click)="closeFinishModal()" [disabled]="savingFinish">Cancelar</button>
-      <button class="btn-primary success" type="button" (click)="submitFinish()" [disabled]="savingFinish">
-        {{ savingFinish ? 'Finalizando...' : 'Confirmar fechamento' }}
+      <button class="btn-primary success" type="button" (click)="submitFinish()" [disabled]="savingFinish || loadingFinishMetrics">
+        {{ savingFinish ? 'Finalizando...' : (loadingFinishMetrics ? 'Atualizando dados...' : 'Confirmar fechamento') }}
       </button>
     </footer>
   </div>

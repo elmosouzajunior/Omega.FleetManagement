@@ -337,7 +337,7 @@ export class TripDetailComponent implements OnInit {
   }
 
   submitFinish(): void {
-    if (!this.trip?.id) return;
+    if (!this.trip?.id || this.savingFinish || this.loadingFinishMetrics) return;
 
     const unloadingDate = (this.finishForm.unloadingDate || '').trim();
     const unloadingLocation = (this.finishForm.unloadingLocation || '').trim() || (this.trip?.unloadingLocation || '').trim();
@@ -377,15 +377,19 @@ export class TripDetailComponent implements OnInit {
       finishKm,
       dieselKmPerLiter: this.finishForm.dieselKmPerLiter,
       arlaKmPerLiter: this.finishForm.arlaKmPerLiter
-    }).subscribe({
-      next: () => {
+    }).pipe(
+      finalize(() => {
         this.savingFinish = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: () => {
         this.showFinishModal = false;
         this.loadTrip();
       },
       error: (err) => {
-        this.savingFinish = false;
         this.finishError = err?.error?.message || 'Erro ao finalizar a viagem.';
+        this.cdr.detectChanges();
       }
     });
   }
