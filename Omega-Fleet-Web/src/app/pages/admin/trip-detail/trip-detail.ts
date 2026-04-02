@@ -486,6 +486,11 @@ export class TripDetailComponent implements OnInit {
       : 0;
   }
 
+  onOpeningLoadedWeightChange(value: string | number): void {
+    this.openingEditForm.loadedWeightTons = this.parseDecimalInput(value);
+    this.recalculateOpeningFreight();
+  }
+
   get mileageDriven(): number {
     const finishKm = Number(this.trip?.finishKm || 0);
     const startKm = Number(this.trip?.startKm || 0);
@@ -623,6 +628,22 @@ export class TripDetailComponent implements OnInit {
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return '';
     return parsed.toISOString().slice(0, 10);
+  }
+
+  private parseDecimalInput(value: string | number | null | undefined): number | null {
+    if (value === null || value === undefined) return null;
+
+    const normalized = value
+      .toString()
+      .trim()
+      .replace(/\s/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
+
+    if (!normalized) return null;
+
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
   private getExpenseLitersByType(target: 'diesel' | 'arla'): number {

@@ -178,8 +178,24 @@ export class TripOpenComponent implements OnInit {
 
   onLoadedWeightChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const numericValue = Number(input.value || 0);
+    const numericValue = this.parseDecimalInput(input.value);
     this.tripForm.patchValue({ loadedWeightTons: numericValue }, { emitEvent: false });
     this.recalculateTotalFreight();
+  }
+
+  private parseDecimalInput(value: string | number | null | undefined): number | null {
+    if (value === null || value === undefined) return null;
+
+    const normalized = value
+      .toString()
+      .trim()
+      .replace(/\s/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
+
+    if (!normalized) return null;
+
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 }
