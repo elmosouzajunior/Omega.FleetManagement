@@ -9,6 +9,8 @@ namespace Omega.FleetManagement.Application.DTOs
         string UnloadingLocation,
         DateTime LoadingDate,
         decimal StartKm,
+        decimal TonValue,
+        decimal LoadedWeightTons,
         decimal FreightValue,
         IFormFile? FreightAttachment
     );

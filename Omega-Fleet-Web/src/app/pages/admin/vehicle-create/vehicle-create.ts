@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { VehicleService } from '../../../services/vehicle';
 
 @Component({
@@ -23,11 +24,12 @@ export class VehicleCreateComponent {
 
   private readonly licensePlatePattern = /^[A-Za-z]{3}[0-9][A-Za-z0-9][0-9]{2}$/;
 
-  constructor(private fb: FormBuilder, private vehicleService: VehicleService) {
+  constructor(private fb: FormBuilder, private vehicleService: VehicleService, private router: Router) {
     this.vehicleForm = this.fb.group({
       licensePlate: ['', [Validators.required, Validators.minLength(7), Validators.maxLength(7), Validators.pattern(this.licensePlatePattern)]],
       manufacturer: ['', [Validators.required]],
-      color: ['']
+      color: [''],
+      loadCapacityTons: [null, [Validators.required, Validators.min(0.01)]]
     });
   }
 
@@ -44,7 +46,7 @@ export class VehicleCreateComponent {
       this.vehicleService.create(vehicleData).subscribe({
         next: () => {
           alert('Veículo cadastrado com sucesso!');
-          this.vehicleForm.reset();
+          this.router.navigate(['/Admin/vehicles']);
         },
         error: (err) => {
           console.error('Erro detalhado da API:', err);

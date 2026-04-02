@@ -41,7 +41,11 @@ export class TripService {
     return this.http.post<any>(`${this.apiUrl}/open`, formData, { headers: this.getHeaders() });
   }
 
-  finishTrip(id: string, finishData: { unloadingDate: string, finishKm: number, unloadingLocation: string }): Observable<any> {
+  updateOpening(id: string, payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}/opening`, payload, { headers: this.getHeaders() });
+  }
+
+  finishTrip(id: string, finishData: { unloadingDate: string, finishKm: number, unloadingLocation: string, dieselKmPerLiter?: number | null, arlaKmPerLiter?: number | null }): Observable<any> {
     // Faltava o { headers } aqui
     return this.http.patch<any>(`${this.apiUrl}/${id}/finish`, finishData, { headers: this.getHeaders() });
   }

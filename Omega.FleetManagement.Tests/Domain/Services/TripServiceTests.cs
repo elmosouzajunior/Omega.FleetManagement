@@ -23,7 +23,7 @@ public class TripServiceTests
         _tripRepository.Setup(x => x.HasOpenTripByVehicleAsync(It.IsAny<Guid>(), null)).ReturnsAsync(true);
 
         var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.OpenTripAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Origem", "Destino", DateTime.UtcNow, 100, 500, null));
+            service.OpenTripAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Origem", "Destino", DateTime.UtcNow, 100, 10, 50, 500, null));
 
         Assert.Equal("O veículo já possui uma viagem em andamento e não pode abrir outra.", ex.Message);
     }
@@ -42,10 +42,10 @@ public class TripServiceTests
         _tripRepository.Setup(x => x.HasOpenTripByVehicleAsync(vehicleId, null)).ReturnsAsync(false);
         _driverRepository.Setup(x => x.GetByIdAsync(driverId, companyId)).ReturnsAsync(driver);
         _vehicleRepository.Setup(x => x.GetByIdAsync(vehicleId, companyId))
-            .ReturnsAsync(new Vehicle(companyId, "ABC1234", "Volvo", "Branco"));
+            .ReturnsAsync(new Vehicle(companyId, "ABC1234", "Volvo", "Branco", 20));
 
         var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.OpenTripAsync(companyId, driverId, vehicleId, "Origem", "Destino", DateTime.UtcNow, 100, 500, null));
+            service.OpenTripAsync(companyId, driverId, vehicleId, "Origem", "Destino", DateTime.UtcNow, 100, 10, 50, 500, null));
 
         Assert.Equal("O motorista informado está inativo.", ex.Message);
     }
@@ -58,7 +58,7 @@ public class TripServiceTests
         var driverId = Guid.NewGuid();
         var otherDriverId = Guid.NewGuid();
         var vehicleId = Guid.NewGuid();
-        var vehicle = new Vehicle(companyId, "ABC1234", "Volvo", "Branco");
+        var vehicle = new Vehicle(companyId, "ABC1234", "Volvo", "Branco", 20);
         vehicle.AssignDriver(otherDriverId);
 
         _tripRepository.Setup(x => x.HasOpenTripAsync(driverId, null)).ReturnsAsync(false);
@@ -68,7 +68,7 @@ public class TripServiceTests
         _vehicleRepository.Setup(x => x.GetByIdAsync(vehicleId, companyId)).ReturnsAsync(vehicle);
 
         var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.OpenTripAsync(companyId, driverId, vehicleId, "Origem", "Destino", DateTime.UtcNow, 100, 500, null));
+            service.OpenTripAsync(companyId, driverId, vehicleId, "Origem", "Destino", DateTime.UtcNow, 100, 10, 50, 500, null));
 
         Assert.Equal("O veículo está vinculado a outro motorista.", ex.Message);
     }
@@ -79,12 +79,12 @@ public class TripServiceTests
         var service = CreateService();
         var companyId = Guid.NewGuid();
         var loadingDate = new DateTime(2026, 3, 20, 12, 0, 0, DateTimeKind.Utc);
-        var trip = new Trip(companyId, Guid.NewGuid(), Guid.NewGuid(), "Origem", "Destino", loadingDate, 100, 500, 10m, null);
+        var trip = new Trip(companyId, Guid.NewGuid(), Guid.NewGuid(), "Origem", "Destino", loadingDate, 100, 10, 50, 500, 10m, null);
 
         _tripRepository.Setup(x => x.GetByIdAsync(trip.Id, companyId)).ReturnsAsync(trip);
 
         var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.FinishTripAsync(trip.Id, companyId, loadingDate.AddDays(-1), "Destino", 150));
+            service.FinishTripAsync(trip.Id, companyId, loadingDate.AddDays(-1), "Destino", 150, null, null));
 
         Assert.Equal("Data de encerramento não pode ser anterior à abertura da viagem.", ex.Message);
     }

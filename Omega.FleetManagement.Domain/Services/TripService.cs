@@ -24,6 +24,8 @@ namespace Omega.FleetManagement.Domain.Services
             string unloadingLocation,
             DateTime loadingDate,
             decimal startKm,
+            decimal tonValue,
+            decimal loadedWeightTons,
             decimal freightValue,
             string? attachmentPath)
         {
@@ -54,12 +56,26 @@ namespace Omega.FleetManagement.Domain.Services
             if (loadingDate == default) throw new ArgumentException("Data de carregamento é obrigatória.");
             if (loadingDate > DateTime.UtcNow.AddDays(1)) throw new ArgumentException("Data de carregamento não pode ser futura.");
             if (startKm < 0) throw new ArgumentException("KM inicial não pode ser negativo.");
+            if (tonValue <= 0) throw new ArgumentException("Valor da tonelada deve ser maior que zero.");
+            if (loadedWeightTons <= 0) throw new ArgumentException("Peso carregado deve ser maior que zero.");
             if (freightValue <= 0) throw new ArgumentException("Valor do frete deve ser maior que zero.");
             if (string.IsNullOrWhiteSpace(loadingLocation)) throw new ArgumentException("Local de carregamento é obrigatório.");
             if (string.IsNullOrWhiteSpace(unloadingLocation)) throw new ArgumentException("Destino é obrigatório na abertura da viagem.");
 
             // 4. Cria a instância da entidade Trip
-            var trip = new Trip(companyId, driverId, vehicleId, loadingLocation, unloadingLocation, loadingDate, startKm, freightValue, driver.CommissionRate, attachmentPath);
+            var trip = new Trip(
+                companyId,
+                driverId,
+                vehicleId,
+                loadingLocation,
+                unloadingLocation,
+                loadingDate,
+                startKm,
+                tonValue,
+                loadedWeightTons,
+                freightValue,
+                driver.CommissionRate,
+                attachmentPath);
 
             return trip;
         }
@@ -81,6 +97,70 @@ namespace Omega.FleetManagement.Domain.Services
             return trip;
         }
 
+        public async Task<Trip> UpdateTripOpeningAsync(
+            Guid tripId,
+            Guid companyId,
+            Guid driverId,
+            Guid vehicleId,
+            string loadingLocation,
+            string unloadingLocation,
+            DateTime loadingDate,
+            decimal startKm,
+            decimal tonValue,
+            decimal loadedWeightTons,
+            decimal freightValue)
+        {
+            var trip = await _tripRepository.GetByIdAsync(tripId, companyId);
+            if (trip == null)
+                throw new ArgumentException("Viagem não encontrada.");
+
+            if (trip.CompanyId != companyId)
+                throw new ArgumentException("Viagem não pertence à empresa informada.");
+
+            if (trip.Status != Enums.TripStatus.Open)
+                throw new ArgumentException("Somente viagens abertas podem ter a abertura editada.");
+
+            var hasOpenTrip = await _tripRepository.HasOpenTripAsync(driverId, trip.Id);
+            if (hasOpenTrip)
+                throw new ArgumentException("O motorista já possui outra viagem em andamento.");
+
+            var vehicleHasOpenTrip = await _tripRepository.HasOpenTripByVehicleAsync(vehicleId, trip.Id);
+            if (vehicleHasOpenTrip)
+                throw new ArgumentException("O veículo já possui outra viagem em andamento.");
+
+            var driver = await _driverRepository.GetByIdAsync(driverId, companyId);
+            if (driver == null) throw new Exception("Motorista não encontrado.");
+            if (!driver.IsActive) throw new ArgumentException("O motorista informado está inativo.");
+
+            var vehicle = await _vehicleRepository.GetByIdAsync(vehicleId, companyId);
+            if (vehicle == null) throw new Exception("Veículo não encontrado.");
+            if (!vehicle.IsActive) throw new ArgumentException("O veículo informado está inativo.");
+            if (vehicle.DriverId.HasValue && vehicle.DriverId.Value != driverId)
+                throw new ArgumentException("O veículo está vinculado a outro motorista.");
+
+            if (loadingDate == default) throw new ArgumentException("Data de carregamento é obrigatória.");
+            if (loadingDate > DateTime.UtcNow.AddDays(1)) throw new ArgumentException("Data de carregamento não pode ser futura.");
+            if (startKm < 0) throw new ArgumentException("KM inicial não pode ser negativo.");
+            if (tonValue <= 0) throw new ArgumentException("Valor da tonelada deve ser maior que zero.");
+            if (loadedWeightTons <= 0) throw new ArgumentException("Peso carregado deve ser maior que zero.");
+            if (freightValue <= 0) throw new ArgumentException("Valor do frete deve ser maior que zero.");
+            if (string.IsNullOrWhiteSpace(loadingLocation)) throw new ArgumentException("Local de carregamento é obrigatório.");
+            if (string.IsNullOrWhiteSpace(unloadingLocation)) throw new ArgumentException("Destino é obrigatório na abertura da viagem.");
+
+            trip.UpdateOpening(
+                driverId,
+                vehicleId,
+                loadingLocation.Trim(),
+                unloadingLocation.Trim(),
+                loadingDate,
+                startKm,
+                tonValue,
+                loadedWeightTons,
+                freightValue);
+
+            return trip;
+        }
+
         public async Task<Trip> CancelTripAsync(Guid tripId, Guid companyId)
         {
             var trip = await _tripRepository.GetByIdAsync(tripId, companyId);
@@ -94,7 +174,7 @@ namespace Omega.FleetManagement.Domain.Services
             return trip;
         }
 
-        public async Task<Trip> FinishTripAsync(Guid tripId, Guid companyId, DateTime unloadingDate, string? unloadingLocation, decimal finishKm)
+        public async Task<Trip> FinishTripAsync(Guid tripId, Guid companyId, DateTime unloadingDate, string? unloadingLocation, decimal finishKm, decimal? dieselKmPerLiter, decimal? arlaKmPerLiter)
         {
             var trip = await _tripRepository.GetByIdAsync(tripId, companyId);
             if (trip == null)
@@ -117,7 +197,13 @@ namespace Omega.FleetManagement.Domain.Services
             if (string.IsNullOrWhiteSpace(destination))
                 throw new ArgumentException("Destino não informado na abertura da viagem.");
 
-            trip.Finish(destination, unloadingDate, finishKm);
+            if (dieselKmPerLiter.HasValue && dieselKmPerLiter.Value <= 0)
+                throw new ArgumentException("Diesel - KM/L deve ser maior que zero.");
+
+            if (arlaKmPerLiter.HasValue && arlaKmPerLiter.Value <= 0)
+                throw new ArgumentException("Arla - KM/L deve ser maior que zero.");
+
+            trip.Finish(destination, unloadingDate, finishKm, dieselKmPerLiter, arlaKmPerLiter);
             return trip;
         }
     }

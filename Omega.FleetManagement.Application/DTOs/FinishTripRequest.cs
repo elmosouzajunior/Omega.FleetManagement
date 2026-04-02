@@ -5,5 +5,7 @@ namespace Omega.FleetManagement.Application.DTOs
         public DateTime UnloadingDate { get; set; }
         public string? UnloadingLocation { get; set; }
         public decimal FinishKm { get; set; }
+        public decimal? DieselKmPerLiter { get; set; }
+        public decimal? ArlaKmPerLiter { get; set; }
     }
 }

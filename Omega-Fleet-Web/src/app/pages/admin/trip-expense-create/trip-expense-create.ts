@@ -28,7 +28,8 @@ export class TripExpenseCreateComponent implements OnInit {
     tripId: '',
     expenseTypeId: '',
     description: '',
-    value: null as number | null
+    value: null as number | null,
+    liters: null as number | null
   };
 
   ngOnInit(): void {
@@ -88,12 +89,18 @@ export class TripExpenseCreateComponent implements OnInit {
       return;
     }
 
+    if (this.requiresLiters && (!this.form.liters || this.form.liters <= 0)) {
+      this.errorMessage = 'Para Combustivel ou Arla, informe os litros.';
+      return;
+    }
+
     this.saving = true;
 
     const payload = {
       expenseTypeId: this.form.expenseTypeId,
       description: this.form.description,
-      value: Number(this.form.value)
+      value: Number(this.form.value),
+      liters: this.requiresLiters ? Number(this.form.liters) : null
     };
 
     this.tripService.addExpense(this.form.tripId, payload).subscribe({
@@ -104,14 +111,15 @@ export class TripExpenseCreateComponent implements OnInit {
           tripId: '',
           expenseTypeId: '',
           description: '',
-          value: null
+          value: null,
+          liters: null
         };
         this.valueDisplay = '';
         this.cdr.detectChanges();
       },
       error: (err) => {
         this.saving = false;
-        this.errorMessage = err?.error?.message || 'Erro ao lancar despesa na viagem.';
+        this.errorMessage = err?.error?.message || 'Erro ao Lançar despesa na viagem.';
         this.cdr.detectChanges();
       }
     });
@@ -148,5 +156,17 @@ export class TripExpenseCreateComponent implements OnInit {
     }
 
     return !trip?.endDate;
+  }
+
+  onExpenseTypeChange(): void {
+    if (!this.requiresLiters) {
+      this.form.liters = null;
+    }
+  }
+
+  get requiresLiters(): boolean {
+    const selectedType = this.expenseTypes.find((type: any) => (type.id || type.expenseTypeId) === this.form.expenseTypeId);
+    const normalized = ((selectedType?.name || selectedType?.description || '') as string).trim().toLowerCase();
+    return normalized.includes('combust') || normalized.includes('diesel') || normalized.includes('arla');
   }
 }

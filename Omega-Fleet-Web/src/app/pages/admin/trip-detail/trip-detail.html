@@ -17,7 +17,8 @@
 
       <div class="header-actions">
         <button class="btn-secondary" (click)="goBack()">Voltar</button>
-        <button class="btn-primary" (click)="launchExpense()" [disabled]="isTripClosed">Lancar Despesa</button>
+        <button class="btn-primary" *ngIf="isTripOpen" (click)="openEditOpeningModal()">Editar Abertura</button>
+        <button class="btn-primary" (click)="launchExpense()" [disabled]="isTripClosed">Lançar Despesa</button>
         <button class="btn-primary success" *ngIf="isTripOpen" (click)="openFinishModal()">Finalizar</button>
         <button class="btn-primary warning" *ngIf="isTripClosed" (click)="reopenTrip()" [disabled]="reopeningTrip">
           {{ reopeningTrip ? 'Reabrindo...' : 'Reabrir Viagem' }}
@@ -34,7 +35,7 @@
         </strong>
       </article>
       <article class="stat-card">
-        <span class="label">Frete Bruto</span>
+        <span class="label">Frete Total</span>
         <strong>{{ trip.freightValue | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
       </article>
       <article class="stat-card">
@@ -74,6 +75,18 @@
           <span>KM inicial</span>
           <strong>{{ trip.startKm | number:'1.0-0' }} km</strong>
         </div>
+        <div class="line-item">
+          <span>Valor da tonelada</span>
+          <strong>{{ tonValue | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+        </div>
+        <div class="line-item">
+          <span>Peso carregado</span>
+          <strong>{{ loadedWeightTons | number:'1.2-2' }} T</strong>
+        </div>
+        <div class="line-item">
+          <span>Valor total do frete</span>
+          <strong>{{ trip.freightValue | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+        </div>
       </article>
 
       <article class="panel">
@@ -94,6 +107,14 @@
           <div class="line-item">
             <span>KM rodados</span>
             <strong>{{ mileageDriven | number:'1.0-0' }} km</strong>
+          </div>
+          <div class="line-item">
+            <span>Diesel - KM/L</span>
+            <strong>{{ trip.dieselKmPerLiter ? (trip.dieselKmPerLiter | number:'1.2-2') : '-' }}</strong>
+          </div>
+          <div class="line-item">
+            <span>Arla - KM/L</span>
+            <strong>{{ trip.arlaKmPerLiter ? (trip.arlaKmPerLiter | number:'1.2-2') : '-' }}</strong>
           </div>
         </div>
         <ng-template #openTripState>
@@ -117,6 +138,7 @@
           <tr>
             <th>Tipo</th>
             <th>Descricao</th>
+            <th>Litros</th>
             <th style="text-align:right;">Valor</th>
             <th style="text-align:right;">A&Ccedil;&Otilde;ES</th>
           </tr>
@@ -125,6 +147,7 @@
           <tr *ngFor="let expense of expenses">
             <td>{{ expense.expenseTypeName || expense.type || '-' }}</td>
             <td>{{ expense.description || '-' }}</td>
+            <td>{{ expense.liters ? (expense.liters | number:'1.2-2') : '-' }}</td>
             <td class="value">{{ expense.value | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
             <td style="text-align:right;">
               <button class="btn-icon" type="button" title="Editar despesa" (click)="openEditExpenseModal(expense)">✏️</button>
@@ -134,6 +157,78 @@
       </table>
     </section>
   </ng-container>
+</div>
+
+<div class="modal-overlay" *ngIf="showEditOpeningModal" (click)="$event.target === $event.currentTarget && closeEditOpeningModal()">
+  <div class="modal-card modal-card-lg">
+    <header class="modal-header">
+      <h3>Editar Abertura da Viagem</h3>
+      <button type="button" class="btn-close" (click)="closeEditOpeningModal()">x</button>
+    </header>
+
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Veiculo *</label>
+          <select [disabled]="savingOpeningEdit || loadingVehicles" [ngModel]="openingEditForm.vehicleId" (ngModelChange)="openingEditForm.vehicleId = $event; syncOpeningDriverDisplay()" >
+            <option value="">Selecione...</option>
+            <option *ngFor="let vehicle of availableVehicles" [value]="vehicle.id">
+              {{ vehicle.licensePlate }} - {{ vehicle.manufacturer }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Motorista</label>
+          <input type="text" [value]="selectedOpeningDriverDisplay" readonly />
+        </div>
+
+        <div class="form-group full">
+          <label>Local de carregamento *</label>
+          <input type="text" [(ngModel)]="openingEditForm.loadingLocation" [disabled]="savingOpeningEdit" />
+        </div>
+
+        <div class="form-group full">
+          <label>Destino *</label>
+          <input type="text" [(ngModel)]="openingEditForm.unloadingLocation" [disabled]="savingOpeningEdit" />
+        </div>
+
+        <div class="form-group">
+          <label>Data *</label>
+          <input type="date" [(ngModel)]="openingEditForm.loadingDate" [disabled]="savingOpeningEdit" />
+        </div>
+
+        <div class="form-group">
+          <label>KM inicial *</label>
+          <input type="number" min="0" [(ngModel)]="openingEditForm.startKm" [disabled]="savingOpeningEdit" />
+        </div>
+
+        <div class="form-group">
+          <label>Valor da tonelada *</label>
+          <input type="number" min="0.01" step="0.01" [(ngModel)]="openingEditForm.tonValue" (ngModelChange)="recalculateOpeningFreight()" [disabled]="savingOpeningEdit" />
+        </div>
+
+        <div class="form-group">
+          <label>Peso carregado (T) *</label>
+          <input type="number" min="0.01" step="0.01" [(ngModel)]="openingEditForm.loadedWeightTons" (ngModelChange)="recalculateOpeningFreight()" [disabled]="savingOpeningEdit" />
+        </div>
+
+        <div class="form-group full">
+          <label>Valor total do frete</label>
+          <input type="text" [value]="openingEditForm.freightValue | currency:'BRL':'symbol':'1.2-2':'pt-BR'" readonly />
+        </div>
+      </div>
+
+      <p *ngIf="openingEditError" class="error-msg">{{ openingEditError }}</p>
+    </div>
+
+    <footer class="modal-footer">
+      <button class="btn-secondary" type="button" (click)="closeEditOpeningModal()" [disabled]="savingOpeningEdit">Cancelar</button>
+      <button class="btn-primary" type="button" (click)="submitOpeningEdit()" [disabled]="savingOpeningEdit || loadingVehicles">
+        {{ savingOpeningEdit ? 'Salvando...' : 'Salvar abertura' }}
+      </button>
+    </footer>
+  </div>
 </div>
 
 <div class="modal-overlay" *ngIf="showFinishModal" (click)="$event.target === $event.currentTarget && closeFinishModal()">
@@ -162,9 +257,20 @@
 
       <div class="form-group">
         <label>KM final *</label>
-        <input type="number" min="0" [(ngModel)]="finishForm.finishKm" [disabled]="savingFinish" />
+        <input type="number" min="0" [(ngModel)]="finishForm.finishKm" (ngModelChange)="onFinishKmInput()" [disabled]="savingFinish" />
       </div>
 
+      <div class="form-group">
+        <label>Diesel - KM/L</label>
+        <input type="number" min="0.01" step="0.01" [(ngModel)]="finishForm.dieselKmPerLiter" [disabled]="savingFinish" readonly />
+      </div>
+
+      <div class="form-group">
+        <label>Arla - KM/L</label>
+        <input type="number" min="0.01" step="0.01" [(ngModel)]="finishForm.arlaKmPerLiter" [disabled]="savingFinish" readonly />
+      </div>
+
+      <p class="helper-text">{{ finishConsumptionSummary }}</p>
       <p *ngIf="finishError" class="error-msg">{{ finishError }}</p>
     </div>
 
@@ -201,8 +307,13 @@
       </div>
 
       <div class="form-group">
-        <label>Valor (R$) *</label>
+        <label>{{ expenseEditRequiresLiters ? 'Valor Total (R$) *' : 'Valor (R$) *' }}</label>
         <input type="number" min="0.01" step="0.01" [(ngModel)]="expenseToEdit.value" [disabled]="savingExpenseEdit" />
+      </div>
+
+      <div class="form-group" *ngIf="expenseEditRequiresLiters">
+        <label>Litros *</label>
+        <input type="number" min="0.01" step="0.01" [(ngModel)]="expenseToEdit.liters" [disabled]="savingExpenseEdit" />
       </div>
 
       <p *ngIf="expenseEditError" class="error-msg">{{ expenseEditError }}</p>

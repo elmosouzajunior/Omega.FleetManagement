@@ -103,6 +103,31 @@ namespace Omega.FleetManagement.API.Controllers
             }
         }
 
+        [HttpPut("{id}/opening")]
+        public async Task<IActionResult> UpdateOpening(Guid id, [FromBody] UpdateTripOpeningRequest request)
+        {
+            try
+            {
+                if (!TryGetCompanyId(out var companyId))
+                    return Unauthorized(new { success = false, message = "CompanyId inválido no token." });
+
+                await _tripAppService.UpdateTripOpeningAsync(id, request, companyId);
+                return Ok(new { success = true, message = "Abertura da viagem atualizada com sucesso." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(_logger, ex, "atualizar abertura da viagem");
+            }
+        }
+
         [HttpPatch("{id}/reopen")]
         public async Task<IActionResult> Reopen(Guid id)
         {

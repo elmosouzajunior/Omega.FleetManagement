@@ -44,6 +44,14 @@
             <label class="form-label fw-bold">Cor</label>
             <input type="text" class="form-control" formControlName="color" placeholder="Ex: Azul">
           </div>
+
+          <div class="col-md-3 mb-3">
+            <label class="form-label fw-bold">Capacidade de Carga (T) <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" formControlName="loadCapacityTons" min="0.01" step="0.01" placeholder="Ex: 32,50">
+            @if (vehicleForm.get('loadCapacityTons')?.touched && vehicleForm.get('loadCapacityTons')?.invalid) {
+            <div class="text-danger small mt-1">Informe uma capacidade maior que zero.</div>
+            }
+          </div>
         </div>
 
         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">

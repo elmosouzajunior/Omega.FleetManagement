@@ -35,7 +35,8 @@ namespace Omega.FleetManagement.Application.Services
                 companyId,
                 dto.LicensePlate,
                 dto.Manufacturer ?? string.Empty,
-                dto.Color ?? string.Empty
+                dto.Color ?? string.Empty,
+                dto.LoadCapacityTons
             );
 
             await _vehicleRepository.AddAsync(vehicle);
@@ -51,6 +52,7 @@ namespace Omega.FleetManagement.Application.Services
                 v.LicensePlate,
                 v.Manufacturer ?? string.Empty,
                 v.Color ?? string.Empty,
+                v.LoadCapacityTons,
                 v.Driver?.Name,
                 v.Driver?.Id,
                 v.IsActive
@@ -86,7 +88,15 @@ namespace Omega.FleetManagement.Application.Services
             var vehicle = await _vehicleRepository.GetByIdAsync(id, companyId);
             if (vehicle == null) return false;
 
-            vehicle.UpdateInfo(request.LicensePlate, request.Manufacturer ?? string.Empty, request.Color ?? string.Empty, request.IsActive);
+            if (request.LoadCapacityTons.HasValue && request.LoadCapacityTons.Value <= 0)
+                throw new ArgumentException("Capacidade de carga deve ser maior que zero.");
+
+            vehicle.UpdateInfo(
+                request.LicensePlate,
+                request.Manufacturer ?? string.Empty,
+                request.Color ?? string.Empty,
+                request.LoadCapacityTons,
+                request.IsActive);
             await _vehicleRepository.UpdateAsync(vehicle);
             await _uow.CommitAsync();
 
@@ -111,8 +121,20 @@ namespace Omega.FleetManagement.Application.Services
                 date: request.ExpenseDate?.ToUniversalTime() ?? DateTime.UtcNow,
                 vehicleId: vehicleId);
 
+            var isFuelOrArla = IsFuelOrArlaExpense(expenseType.Name);
+            if (isFuelOrArla && (!request.Liters.HasValue || request.Liters.Value <= 0))
+                throw new ArgumentException("Para Combustível ou Arla, informe os litros.");
+
+            expense.SetLiters(isFuelOrArla ? request.Liters : null);
+
             await _expenseRepository.AddAsync(expense);
             await _uow.CommitAsync();
+        }
+
+        private static bool IsFuelOrArlaExpense(string? expenseTypeName)
+        {
+            var normalized = (expenseTypeName ?? string.Empty).Trim().ToLowerInvariant();
+            return normalized.Contains("combust") || normalized.Contains("diesel") || normalized.Contains("arla");
         }
     }
 }

@@ -17,6 +17,16 @@ public class TripMapping : IEntityTypeConfiguration<Trip>
             .HasColumnName("StartKm")
             .HasColumnType("numeric(18,2)");
 
+        builder.Property(t => t.TonValue)
+            .HasColumnName("TonValue")
+            .HasColumnType("numeric(18,2)")
+            .HasDefaultValue(0);
+
+        builder.Property(t => t.LoadedWeightTons)
+            .HasColumnName("LoadedWeightTons")
+            .HasColumnType("numeric(18,2)")
+            .HasDefaultValue(0);
+
         builder.Property(t => t.FinishKm)
             .HasColumnName("FinishKm")
             .HasColumnType("numeric(18,2)")
@@ -25,6 +35,16 @@ public class TripMapping : IEntityTypeConfiguration<Trip>
         builder.Property(t => t.FreightValue)
             .HasColumnName("FreightValue")
             .HasColumnType("numeric(18,2)");
+
+        builder.Property(t => t.DieselKmPerLiter)
+            .HasColumnName("DieselKmPerLiter")
+            .HasColumnType("numeric(18,2)")
+            .IsRequired(false);
+
+        builder.Property(t => t.ArlaKmPerLiter)
+            .HasColumnName("ArlaKmPerLiter")
+            .HasColumnType("numeric(18,2)")
+            .IsRequired(false);
 
         builder.Property(t => t.CommissionPercent)
             .HasColumnName("CommissionPercent")

@@ -33,6 +33,8 @@ export class TripOpenComponent implements OnInit {
       unloadingLocation: ['', Validators.required],
       loadingDate: [new Date().toISOString().substring(0, 10), Validators.required],
       startKm: [null, [Validators.required, Validators.min(0)]],
+      tonValue: [null, [Validators.required, Validators.min(0.01)]],
+      loadedWeightTons: [null, [Validators.required, Validators.min(0.01)]],
       freightValue: [null, [Validators.required, Validators.min(0)]]
     });
   }
@@ -155,5 +157,29 @@ export class TripOpenComponent implements OnInit {
     // 4. Salva o valor numérico puro no Form para o banco (ex: 25000.00)
     const numericValue = value ? parseFloat(value) / 100 : 0;
     this.tripForm.patchValue({ freightValue: numericValue });
+  }
+
+  recalculateTotalFreight(): void {
+    const tonValue = Number(this.tripForm.get('tonValue')?.value || 0);
+    const loadedWeightTons = Number(this.tripForm.get('loadedWeightTons')?.value || 0);
+    const totalFreight = tonValue > 0 && loadedWeightTons > 0
+      ? Number((tonValue * loadedWeightTons).toFixed(2))
+      : 0;
+
+    this.tripForm.patchValue({ freightValue: totalFreight }, { emitEvent: false });
+  }
+
+  formatTonMoney(event: any): void {
+    this.formatMoney(event);
+    const numericValue = Number(this.tripForm.get('freightValue')?.value || 0);
+    this.tripForm.patchValue({ tonValue: numericValue }, { emitEvent: false });
+    this.recalculateTotalFreight();
+  }
+
+  onLoadedWeightChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const numericValue = Number(input.value || 0);
+    this.tripForm.patchValue({ loadedWeightTons: numericValue }, { emitEvent: false });
+    this.recalculateTotalFreight();
   }
 }

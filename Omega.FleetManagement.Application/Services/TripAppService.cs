@@ -55,6 +55,8 @@ namespace Omega.FleetManagement.Application.Services
                     dto.UnloadingLocation,
                     dto.LoadingDate.ToUniversalTime(),
                     dto.StartKm, // Ajustado para Km (C# standard)
+                    dto.TonValue,
+                    dto.LoadedWeightTons,
                     dto.FreightValue,
                     photoPath
                 );
@@ -73,6 +75,25 @@ namespace Omega.FleetManagement.Application.Services
             }
         }
 
+        public async Task UpdateTripOpeningAsync(Guid tripId, UpdateTripOpeningRequest request, Guid companyId)
+        {
+            var trip = await _tripDomainService.UpdateTripOpeningAsync(
+                tripId,
+                companyId,
+                request.DriverId,
+                request.VehicleId,
+                request.LoadingLocation,
+                request.UnloadingLocation,
+                request.LoadingDate.ToUniversalTime(),
+                request.StartKm,
+                request.TonValue,
+                request.LoadedWeightTons,
+                request.FreightValue);
+
+            await _tripRepository.UpdateAsync(trip);
+            await _uow.CommitAsync();
+        }
+
         public async Task ReopenTripAsync(Guid tripId, Guid companyId)
         {
             var trip = await _tripDomainService.ReopenTripAsync(tripId, companyId);
@@ -89,12 +110,20 @@ namespace Omega.FleetManagement.Application.Services
 
         public async Task FinishTripAsync(Guid tripId, FinishTripRequest request, Guid companyId)
         {
+            if (request.DieselKmPerLiter.HasValue && request.DieselKmPerLiter.Value <= 0)
+                throw new ArgumentException("Diesel - KM/L deve ser maior que zero.");
+
+            if (request.ArlaKmPerLiter.HasValue && request.ArlaKmPerLiter.Value <= 0)
+                throw new ArgumentException("Arla - KM/L deve ser maior que zero.");
+
             var trip = await _tripDomainService.FinishTripAsync(
                 tripId,
                 companyId,
                 request.UnloadingDate.ToUniversalTime(),
                 request.UnloadingLocation,
-                request.FinishKm);
+                request.FinishKm,
+                request.DieselKmPerLiter,
+                request.ArlaKmPerLiter);
 
             await _tripRepository.UpdateAsync(trip);
             await _uow.CommitAsync();
@@ -117,6 +146,12 @@ namespace Omega.FleetManagement.Application.Services
                 value: request.Value,
                 date: request.ExpenseDate?.ToUniversalTime() ?? DateTime.UtcNow,
                 tripId: tripId);
+
+            var isFuelOrArla = IsFuelOrArlaExpense(expenseType.Name);
+            if (isFuelOrArla && (!request.Liters.HasValue || request.Liters.Value <= 0))
+                throw new ArgumentException("Para Combustível ou Arla, informe os litros.");
+
+            expense.SetLiters(isFuelOrArla ? request.Liters : null);
 
             trip.AddExpense(expense);
 
@@ -142,6 +177,12 @@ namespace Omega.FleetManagement.Application.Services
             expense.SetDescription(request.Description);
             expense.SetValue(request.Value);
 
+            var isFuelOrArla = IsFuelOrArlaExpense(expenseType.Name);
+            if (isFuelOrArla && (!request.Liters.HasValue || request.Liters.Value <= 0))
+                throw new ArgumentException("Para Combustível ou Arla, informe os litros.");
+
+            expense.SetLiters(isFuelOrArla ? request.Liters : null);
+
             if (request.ExpenseDate.HasValue)
                 expense.ChangeDate(request.ExpenseDate.Value.ToUniversalTime());
 
@@ -166,8 +207,12 @@ namespace Omega.FleetManagement.Application.Services
                 UnloadingDate = t.UnloadingDate ?? DateTime.MinValue,
                 UnloadingLocation = t.UnloadingLocation ?? string.Empty,
                 StartKm = t.StartKm,
+                TonValue = t.TonValue,
+                LoadedWeightTons = t.LoadedWeightTons,
                 FinishKm = t.FinishKm,
                 FreightValue = t.FreightValue,
+                DieselKmPerLiter = t.DieselKmPerLiter,
+                ArlaKmPerLiter = t.ArlaKmPerLiter,
                 CommissionPercent = t.CommissionPercent,
                 CommissionValue = t.CommissionValue,
                 Status = t.Status.ToString()
@@ -194,8 +239,12 @@ namespace Omega.FleetManagement.Application.Services
                 UnloadingDate = trip.UnloadingDate ?? DateTime.MinValue,
                 UnloadingLocation = trip.UnloadingLocation ?? string.Empty,
                 StartKm = trip.StartKm,
+                TonValue = trip.TonValue,
+                LoadedWeightTons = trip.LoadedWeightTons,
                 FinishKm = trip.FinishKm,
                 FreightValue = trip.FreightValue,
+                DieselKmPerLiter = trip.DieselKmPerLiter,
+                ArlaKmPerLiter = trip.ArlaKmPerLiter,
                 CommissionPercent = trip.CommissionPercent,
                 CommissionValue = trip.CommissionValue,
                 Status = trip.Status.ToString(),
@@ -204,12 +253,19 @@ namespace Omega.FleetManagement.Application.Services
                     Id = e.Id,
                     Description = e.Description,
                     Value = e.Value,
+                    Liters = e.Liters,
                     ExpenseDate = e.Date,
                     ExpenseTypeId = e.ExpenseTypeId,
                     ExpenseTypeName = e.ExpenseType?.Name
                 }).ToList()
             };
             return tripDetailDto;
+        }
+
+        private static bool IsFuelOrArlaExpense(string? expenseTypeName)
+        {
+            var normalized = (expenseTypeName ?? string.Empty).Trim().ToLowerInvariant();
+            return normalized.Contains("combust") || normalized.Contains("diesel") || normalized.Contains("arla");
         }
     }
 }

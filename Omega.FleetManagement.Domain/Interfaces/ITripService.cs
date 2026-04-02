@@ -12,10 +12,24 @@ namespace Omega.FleetManagement.Domain.Interfaces
             string unloadingLocation,
             DateTime loadingDate,
             decimal startKm,
+            decimal tonValue,
+            decimal loadedWeightTons,
             decimal freightValue,
             string? attachmentPath
         );
-        Task<Trip> FinishTripAsync(Guid tripId, Guid companyId, DateTime unloadingDate, string? unloadingLocation, decimal finishKm);
+        Task<Trip> UpdateTripOpeningAsync(
+            Guid tripId,
+            Guid companyId,
+            Guid driverId,
+            Guid vehicleId,
+            string loadingLocation,
+            string unloadingLocation,
+            DateTime loadingDate,
+            decimal startKm,
+            decimal tonValue,
+            decimal loadedWeightTons,
+            decimal freightValue);
+        Task<Trip> FinishTripAsync(Guid tripId, Guid companyId, DateTime unloadingDate, string? unloadingLocation, decimal finishKm, decimal? dieselKmPerLiter, decimal? arlaKmPerLiter);
         Task<Trip> ReopenTripAsync(Guid tripId, Guid companyId);
         Task<Trip> CancelTripAsync(Guid tripId, Guid companyId);
     }

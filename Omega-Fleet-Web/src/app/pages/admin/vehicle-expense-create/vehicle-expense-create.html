@@ -1,7 +1,7 @@
 ﻿<div class="list-container">
   <header class="list-header">
     <div class="title-area">
-      <h1>Lancar Despesa de Veiculo</h1>
+      <h1>Lançar Despesa de Veiculo</h1>
       <button class="btn-secondary" type="button" (click)="goBack()">Voltar para veiculos</button>
     </div>
   </header>
@@ -24,7 +24,7 @@
 
           <div class="form-group">
             <label>Tipo de despesa *</label>
-            <select class="modern-select" [(ngModel)]="form.expenseTypeId" name="expenseTypeId" [disabled]="saving || loadingExpenseTypes">
+            <select class="modern-select" [(ngModel)]="form.expenseTypeId" (ngModelChange)="onExpenseTypeChange()" name="expenseTypeId" [disabled]="saving || loadingExpenseTypes">
               <option value="">Selecione...</option>
               <option *ngFor="let type of expenseTypes" [value]="type.id || type.expenseTypeId">
                 {{ type.name || type.description }}
@@ -46,7 +46,7 @@
           </div>
 
           <div class="form-group">
-            <label>Valor (R$) *</label>
+            <label>{{ requiresLiters ? 'Valor Total (R$) *' : 'Valor (R$) *' }}</label>
             <input
               class="modern-select"
               type="number"
@@ -54,6 +54,19 @@
               step="0.01"
               [(ngModel)]="form.value"
               name="value"
+              [disabled]="saving"
+            />
+          </div>
+
+          <div class="form-group" *ngIf="requiresLiters">
+            <label>Litros *</label>
+            <input
+              class="modern-select"
+              type="number"
+              min="0.01"
+              step="0.01"
+              [(ngModel)]="form.liters"
+              name="liters"
               [disabled]="saving"
             />
           </div>

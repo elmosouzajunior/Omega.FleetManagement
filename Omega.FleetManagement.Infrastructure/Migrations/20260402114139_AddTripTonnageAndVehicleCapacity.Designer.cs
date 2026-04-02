@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Omega.FleetManagement.Infrastructure.Data.Context;
 
@@ -11,9 +12,11 @@ using Omega.FleetManagement.Infrastructure.Data.Context;
 namespace Omega.FleetManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(FleetContext))]
-    partial class FleetContextModelSnapshot : ModelSnapshot
+    [Migration("20260402114139_AddTripTonnageAndVehicleCapacity")]
+    partial class AddTripTonnageAndVehicleCapacity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -291,10 +294,6 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
-                    b.Property<decimal?>("Liters")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<string>("ReceiptPath")
                         .HasColumnType("nvarchar(max)");
 
@@ -353,10 +352,6 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal?>("ArlaKmPerLiter")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("ArlaKmPerLiter");
-
                     b.Property<string>("AttachmentPath")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
@@ -375,10 +370,6 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("DieselKmPerLiter")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("DieselKmPerLiter");
 
                     b.Property<Guid>("DriverId")
                         .HasColumnType("uniqueidentifier");

@@ -25,6 +25,7 @@
         <tr>
           <th>Placa</th>
           <th>Marca</th>
+          <th>Capacidade</th>
           <th>Status</th>
           <th>Motorista Alocado</th>
           <th class="text-center">A&Ccedil;&Otilde;ES</th>
@@ -34,6 +35,7 @@
         <tr *ngFor="let vehicle of filteredVehicles">
           <td class="bold">{{ vehicle.licensePlate }}</td>
           <td class="bold">{{ vehicle.manufacturer }}</td>
+          <td>{{ vehicle.loadCapacityTons ? (vehicle.loadCapacityTons | number:'1.2-2') + ' T' : '-' }}</td>
           <td>
             <span class="badge" [ngClass]="vehicle.isActive ? 'bg-success' : 'bg-danger'">
               {{ vehicle.isActive ? 'Ativo' : 'Inativo' }}
@@ -48,13 +50,13 @@
             <div class="action-buttons">
               <button class="btn-icon" (click)="openEditModal(vehicle)" title="Editar Veiculo">&#9998;</button>
               <button class="btn-icon" (click)="openAssignDriver(vehicle)" title="Vincular Motorista">&#128279;</button>
-              <button class="btn-icon" (click)="goToVehicleExpenseScreen(vehicle)" title="Lancar Despesa">&#128176;</button>
+              <button class="btn-icon" (click)="goToVehicleExpenseScreen(vehicle)" title="Lançar Despesa">&#128176;</button>
             </div>
           </td>
         </tr>
 
         <tr *ngIf="filteredVehicles.length === 0 && !loading">
-          <td colspan="5" class="empty">
+          <td colspan="6" class="empty">
             <div class="empty-state">
               <p>Nenhum ve&iacute;culo encontrado para este filtro.</p>
             </div>
@@ -121,6 +123,11 @@
       </div>
 
       <div class="form-group" style="margin-top: 15px;">
+        <label>Capacidade de Carga (T):</label>
+        <input type="number" [(ngModel)]="vehicleToEdit.loadCapacityTons" class="modern-select" min="0.01" step="0.01" placeholder="Ex: 32,50">
+      </div>
+
+      <div class="form-group" style="margin-top: 15px;">
         <label>Status do Ve&iacute;culo:</label>
         <select [(ngModel)]="vehicleToEdit.isActive" class="modern-select">
           <option [ngValue]="true">Ativo</option>
@@ -145,7 +152,7 @@
 <div class="modal-overlay" *ngIf="showVehicleExpenseModal" (click)="$event.target === $event.currentTarget && closeVehicleExpenseModal()">
   <div class="modal-card">
     <header class="modal-header">
-      <h2>Lancar despesa do ve&iacute;culo</h2>
+      <h2>Lançar despesa do ve&iacute;culo</h2>
       <button class="btn-close" (click)="closeVehicleExpenseModal()">x</button>
     </header>
 

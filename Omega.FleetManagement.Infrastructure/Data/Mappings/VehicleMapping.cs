@@ -23,6 +23,10 @@ namespace Omega.FleetManagement.Infrastructure.Data.Mappings
             builder.Property(v => v.Color)
                 .HasMaxLength(30);
 
+            builder.Property(v => v.LoadCapacityTons)
+                .HasColumnType("numeric(18,2)")
+                .IsRequired(false);
+
             builder.Property(v => v.IsActive)
                 .IsRequired()
                 .HasDefaultValue(true);

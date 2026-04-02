@@ -5,6 +5,7 @@ namespace Omega.FleetManagement.Application.Interfaces
     public interface ITripAppService
     {
         Task OpenTripAsync(OpenTripRequest request, Guid companyId);
+        Task UpdateTripOpeningAsync(Guid tripId, UpdateTripOpeningRequest request, Guid companyId);
         Task FinishTripAsync(Guid tripId, FinishTripRequest request, Guid companyId);
         Task ReopenTripAsync(Guid tripId, Guid companyId);
         Task CancelTripAsync(Guid tripId, Guid companyId);

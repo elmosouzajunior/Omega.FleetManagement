@@ -7,6 +7,7 @@ namespace Omega.FleetManagement.Domain.Entities
         public string LicensePlate { get; private set; }
         public string Manufacturer { get; private set; }
         public string? Color { get; private set; }
+        public decimal? LoadCapacityTons { get; private set; }
         public bool IsActive { get; private set; }
 
         // FK e Propriedade de Navegação
@@ -23,11 +24,12 @@ namespace Omega.FleetManagement.Domain.Entities
             Expenses = new List<Expense>();
         }
 
-        public Vehicle(Guid companyId, string licensePlate, string manufacturer, string color) : base(companyId)
+        public Vehicle(Guid companyId, string licensePlate, string manufacturer, string color, decimal? loadCapacityTons) : base(companyId)
         {
             LicensePlate = licensePlate;
             Manufacturer = manufacturer;
             Color = color;
+            LoadCapacityTons = loadCapacityTons;
             IsActive = true;
             Expenses = new List<Expense>();
         }
@@ -46,10 +48,11 @@ namespace Omega.FleetManagement.Domain.Entities
 
         public void Deactivate() => IsActive = false;
 
-        public void UpdateInfo(string model, string manufacturer, string color, bool isActive)
+        public void UpdateInfo(string model, string manufacturer, string color, decimal? loadCapacityTons, bool isActive)
         {
             Manufacturer = manufacturer;
             Color = color;
+            LoadCapacityTons = loadCapacityTons;
             IsActive = isActive;
         }
     }

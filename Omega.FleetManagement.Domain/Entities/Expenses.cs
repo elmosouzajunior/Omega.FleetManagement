@@ -6,6 +6,7 @@ public class Expense : Entity
 {
     public string Description { get; private set; } = string.Empty;
     public decimal Value { get; private set; }
+    public decimal? Liters { get; private set; }
     public DateTime Date { get; private set; }
     public string? ReceiptPath { get; private set; }
     public bool IsApproved { get; private set; }
@@ -46,6 +47,7 @@ public class Expense : Entity
 
         SetDescription(description);
         SetValue(value);
+        SetLiters(null);
     }
 
     // Construtor protegido para o Entity Framework.
@@ -68,6 +70,14 @@ public class Expense : Entity
             throw new ArgumentException("O valor da despesa deve ser maior que zero.");
 
         Value = value;
+    }
+
+    public void SetLiters(decimal? liters)
+    {
+        if (liters.HasValue && liters.Value <= 0)
+            throw new ArgumentException("Os litros devem ser maiores que zero.");
+
+        Liters = liters;
     }
 
     public void SetExpenseType(Guid expenseTypeId)

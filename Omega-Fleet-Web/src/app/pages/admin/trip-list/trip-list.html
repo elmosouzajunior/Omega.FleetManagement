@@ -29,7 +29,7 @@
           <th>Data de In&iacute;cio</th>
           <th>Data de T&eacute;rmino</th>
           <th>Ve&iacute;culo</th>
-          <th>Frete</th>
+          <th>Frete Total</th>
           <th>Status</th>
           <th style="text-align: right;">A&Ccedil;&Otilde;ES</th>
         </tr>
@@ -53,7 +53,7 @@
                 *ngIf="isTripOpen(trip)"
                 [routerLink]="['/Admin/trip-expenses/new']"
                 [queryParams]="{ tripId: trip.id }"
-                title="Lancar despesa na viagem aberta"
+                title="Lançar despesa na viagem aberta"
               >&#128176;</button>
             </div>
           </td>

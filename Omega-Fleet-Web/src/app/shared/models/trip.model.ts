@@ -5,6 +5,8 @@ export interface OpenTripRequest {
     unloadingLocation: string;
     loadingDate: string;
     startKm: number;
+    tonValue: number;
+    loadedWeightTons: number;
     freightValue: number;
     freightAttachment?: File;
 }

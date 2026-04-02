@@ -234,6 +234,10 @@
   padding: 1rem;
 }
 
+.modal-card-lg {
+  max-width: 860px;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -278,6 +282,16 @@
   background: #fff;
 }
 
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.form-group.full {
+  grid-column: 1 / -1;
+}
+
 .error-msg {
   color: #b91c1c;
   margin: 0.5rem 0 0;
@@ -310,6 +324,10 @@
   }
 
   .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid {
     grid-template-columns: 1fr;
   }
 }

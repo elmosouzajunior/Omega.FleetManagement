@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TripService } from '../../../services/trip';
+import { VehicleService } from '../../../services/vehicle';
 import { finalize } from 'rxjs';
 
 @Component({
@@ -13,6 +14,7 @@ export class TripDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly tripService = inject(TripService);
+  private readonly vehicleService = inject(VehicleService);
   private readonly cdr = inject(ChangeDetectorRef);
 
   trip: any = null;
@@ -22,24 +24,46 @@ export class TripDetailComponent implements OnInit {
 
   showFinishModal = false;
   savingFinish = false;
+  loadingFinishMetrics = false;
   reopeningTrip = false;
+  showEditOpeningModal = false;
+  savingOpeningEdit = false;
+  loadingVehicles = false;
   finishError = '';
+  openingEditError = '';
   showEditExpenseModal = false;
   savingExpenseEdit = false;
   loadingExpenseTypes = false;
   expenseEditError = '';
   expenseTypes: any[] = [];
+  availableVehicles: any[] = [];
+  selectedOpeningDriverDisplay = '';
   expenseToEdit: {
     id: string;
     expenseTypeId: string;
     description: string;
     value: number | null;
+    liters: number | null;
   } | null = null;
 
   finishForm = {
     unloadingDate: '',
     unloadingLocation: '',
-    finishKm: null as number | null
+    finishKm: null as number | null,
+    dieselKmPerLiter: null as number | null,
+    arlaKmPerLiter: null as number | null
+  };
+
+  openingEditForm = {
+    vehicleId: '',
+    driverId: '',
+    loadingLocation: '',
+    unloadingLocation: '',
+    loadingDate: '',
+    startKm: null as number | null,
+    tonValue: null as number | null,
+    loadedWeightTons: null as number | null,
+    freightValue: 0
   };
 
   ngOnInit(): void {
@@ -99,6 +123,114 @@ export class TripDetailComponent implements OnInit {
     });
   }
 
+  openEditOpeningModal(): void {
+    if (!this.trip?.id || !this.isTripOpen) return;
+
+    this.showEditOpeningModal = true;
+    this.loadingVehicles = true;
+    this.openingEditError = '';
+    this.selectedOpeningDriverDisplay = this.trip?.driverName || '';
+    this.openingEditForm = {
+      vehicleId: this.trip?.vehicleId || '',
+      driverId: this.trip?.driverId || '',
+      loadingLocation: this.trip?.loadingLocation || '',
+      unloadingLocation: this.trip?.unloadingLocation || '',
+      loadingDate: this.toDateInputValue(this.trip?.loadingDate),
+      startKm: Number(this.trip?.startKm || 0),
+      tonValue: Number(this.trip?.tonValue || 0),
+      loadedWeightTons: Number(this.trip?.loadedWeightTons || 0),
+      freightValue: Number(this.trip?.freightValue || 0)
+    };
+
+    this.vehicleService.getVehicles().subscribe({
+      next: (res: any) => {
+        const data = res?.$values || (Array.isArray(res) ? res : []);
+        this.availableVehicles = (data || []).filter((vehicle: any) =>
+          (vehicle?.driverName || '').trim() !== '' || vehicle.id === this.openingEditForm.vehicleId
+        );
+        this.loadingVehicles = false;
+        this.syncOpeningDriverDisplay();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadingVehicles = false;
+        this.openingEditError = 'Nao foi possivel carregar os veiculos.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  closeEditOpeningModal(): void {
+    if (this.savingOpeningEdit) return;
+    this.showEditOpeningModal = false;
+    this.openingEditError = '';
+    this.availableVehicles = [];
+    this.selectedOpeningDriverDisplay = '';
+    this.cdr.detectChanges();
+  }
+
+  onOpeningVehicleChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.openingEditForm.vehicleId = select.value;
+    this.syncOpeningDriverDisplay();
+  }
+
+  submitOpeningEdit(): void {
+    if (!this.trip?.id) return;
+
+    const loadingLocation = (this.openingEditForm.loadingLocation || '').trim();
+    const unloadingLocation = (this.openingEditForm.unloadingLocation || '').trim();
+    const loadingDate = (this.openingEditForm.loadingDate || '').trim();
+    const startKm = Number(this.openingEditForm.startKm || 0);
+    const tonValue = Number(this.openingEditForm.tonValue || 0);
+    const loadedWeightTons = Number(this.openingEditForm.loadedWeightTons || 0);
+    const freightValue = Number(this.openingEditForm.freightValue || 0);
+
+    if (!this.openingEditForm.vehicleId || !this.openingEditForm.driverId) {
+      this.openingEditError = 'Selecione um veiculo com motorista vinculado.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (!loadingLocation || !unloadingLocation || !loadingDate) {
+      this.openingEditError = 'Preencha local de carregamento, destino e data.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (startKm < 0 || tonValue <= 0 || loadedWeightTons <= 0 || freightValue <= 0) {
+      this.openingEditError = 'Preencha KM inicial, valor da tonelada, peso e frete total com valores validos.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.savingOpeningEdit = true;
+    this.openingEditError = '';
+
+    this.tripService.updateOpening(this.trip.id, {
+      vehicleId: this.openingEditForm.vehicleId,
+      driverId: this.openingEditForm.driverId,
+      loadingLocation,
+      unloadingLocation,
+      loadingDate,
+      startKm,
+      tonValue,
+      loadedWeightTons,
+      freightValue
+    }).subscribe({
+      next: () => {
+        this.savingOpeningEdit = false;
+        this.closeEditOpeningModal();
+        this.loadTrip();
+      },
+      error: (err) => {
+        this.savingOpeningEdit = false;
+        this.openingEditError = err?.error?.message || 'Erro ao atualizar abertura da viagem.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   openEditExpenseModal(expense: any): void {
     if (!this.trip?.id) return;
 
@@ -107,7 +239,8 @@ export class TripDetailComponent implements OnInit {
       id: expense?.id || expense?.Id || '',
       expenseTypeId: expense?.expenseTypeId || expense?.ExpenseTypeId || '',
       description: expense?.description || expense?.Description || '',
-      value: Number(expense?.value || expense?.Value || 0)
+      value: Number(expense?.value || expense?.Value || 0),
+      liters: expense?.liters ?? expense?.Liters ?? null
     };
     this.showEditExpenseModal = true;
 
@@ -141,10 +274,19 @@ export class TripDetailComponent implements OnInit {
 
     const description = (this.expenseToEdit.description || '').trim();
     const value = Number(this.expenseToEdit.value);
+    const liters = this.expenseToEdit.liters === null || this.expenseToEdit.liters === undefined
+      ? null
+      : Number(this.expenseToEdit.liters);
     const expenseTypeId = this.expenseToEdit.expenseTypeId;
 
     if (!expenseTypeId || !description || !value || value <= 0) {
       this.expenseEditError = 'Preencha tipo, descricao e valor validos.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (this.expenseEditRequiresLiters && (!liters || liters <= 0)) {
+      this.expenseEditError = 'Para Combustivel ou Arla, informe os litros.';
       this.cdr.detectChanges();
       return;
     }
@@ -155,7 +297,8 @@ export class TripDetailComponent implements OnInit {
     this.tripService.updateExpense(this.trip.id, this.expenseToEdit.id, {
       expenseTypeId,
       description,
-      value
+      value,
+      liters: this.expenseEditRequiresLiters ? liters : null
     }).subscribe({
       next: () => {
         this.savingExpenseEdit = false;
@@ -177,10 +320,14 @@ export class TripDetailComponent implements OnInit {
     this.finishForm = {
       unloadingDate: this.nowLocalDate(),
       unloadingLocation: this.trip?.unloadingLocation || '',
-      finishKm: this.trip?.startKm || null
+      finishKm: this.trip?.startKm || null,
+      dieselKmPerLiter: this.trip?.dieselKmPerLiter ?? null,
+      arlaKmPerLiter: this.trip?.arlaKmPerLiter ?? null
     };
 
+    this.recalculateFinishConsumption();
     this.showFinishModal = true;
+    this.refreshFinishContext();
   }
 
   closeFinishModal(): void {
@@ -227,7 +374,9 @@ export class TripDetailComponent implements OnInit {
     this.tripService.finishTrip(this.trip.id, {
       unloadingDate: finishDate.toISOString(),
       unloadingLocation,
-      finishKm
+      finishKm,
+      dieselKmPerLiter: this.finishForm.dieselKmPerLiter,
+      arlaKmPerLiter: this.finishForm.arlaKmPerLiter
     }).subscribe({
       next: () => {
         this.savingFinish = false;
@@ -303,11 +452,95 @@ export class TripDetailComponent implements OnInit {
     return Number(this.trip?.freightValue || 0) - this.totalExpenses - this.commissionValue;
   }
 
+  get tonValue(): number {
+    return Number(this.trip?.tonValue || 0);
+  }
+
+  get loadedWeightTons(): number {
+    return Number(this.trip?.loadedWeightTons || 0);
+  }
+
+  get tripDistanceForFinish(): number {
+    const finishKm = Number(this.finishForm.finishKm || 0);
+    const startKm = Number(this.trip?.startKm || 0);
+    if (finishKm <= 0 || finishKm <= startKm) return 0;
+    return finishKm - startKm;
+  }
+
+  get expenseEditRequiresLiters(): boolean {
+    if (!this.expenseToEdit?.expenseTypeId) return false;
+    const selectedType = this.expenseTypes.find((type: any) => (type.id || type.expenseTypeId) === this.expenseToEdit?.expenseTypeId);
+    const normalized = ((selectedType?.name || selectedType?.description || '') as string).trim().toLowerCase();
+    return normalized.includes('combust') || normalized.includes('diesel') || normalized.includes('arla');
+  }
+
+  recalculateOpeningFreight(): void {
+    const tonValue = Number(this.openingEditForm.tonValue || 0);
+    const loadedWeightTons = Number(this.openingEditForm.loadedWeightTons || 0);
+    this.openingEditForm.freightValue = tonValue > 0 && loadedWeightTons > 0
+      ? Number((tonValue * loadedWeightTons).toFixed(2))
+      : 0;
+  }
+
   get mileageDriven(): number {
     const finishKm = Number(this.trip?.finishKm || 0);
     const startKm = Number(this.trip?.startKm || 0);
     if (finishKm <= 0 || finishKm <= startKm) return 0;
     return finishKm - startKm;
+  }
+
+  recalculateFinishConsumption(): void {
+    const tripDistance = this.tripDistanceForFinish;
+
+    if (tripDistance <= 0) {
+      this.finishForm.dieselKmPerLiter = null;
+      this.finishForm.arlaKmPerLiter = null;
+      return;
+    }
+
+    const dieselLiters = this.getExpenseLitersByType('diesel');
+    const arlaLiters = this.getExpenseLitersByType('arla');
+
+    this.finishForm.dieselKmPerLiter = dieselLiters > 0
+      ? Number((tripDistance / dieselLiters).toFixed(2))
+      : null;
+
+    this.finishForm.arlaKmPerLiter = arlaLiters > 0
+      ? Number((tripDistance / arlaLiters).toFixed(2))
+      : null;
+  }
+
+  get finishConsumptionSummary(): string {
+    if (this.loadingFinishMetrics) {
+      return 'Atualizando despesas da viagem para recalcular automaticamente.';
+    }
+
+    const dieselLiters = this.getExpenseLitersByType('diesel');
+    const arlaLiters = this.getExpenseLitersByType('arla');
+    const formatLiters = (value: number) => new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
+
+    if (this.tripDistanceForFinish <= 0) {
+      if (dieselLiters <= 0 && arlaLiters <= 0) {
+        return 'Informe o KM final. Nenhuma despesa de Combustivel/Arla com litros informados foi encontrada.';
+      }
+
+      const parts: string[] = [];
+      if (dieselLiters > 0) parts.push(`Combustivel: ${formatLiters(dieselLiters)} L`);
+      if (arlaLiters > 0) parts.push(`Arla: ${formatLiters(arlaLiters)} L`);
+      return `Informe o KM final para calcular automaticamente. Litros considerados: ${parts.join(' | ')}.`;
+    }
+
+    if (dieselLiters <= 0 && arlaLiters <= 0) {
+      return 'Nenhuma despesa de Combustivel/Arla com litros informados foi encontrada.';
+    }
+
+    const parts: string[] = [];
+    if (dieselLiters > 0) parts.push(`Combustivel: ${formatLiters(dieselLiters)} L`);
+    if (arlaLiters > 0) parts.push(`Arla: ${formatLiters(arlaLiters)} L`);
+    return `Calculo automatico usando ${parts.join(' | ')}.`;
   }
 
   get isTripOpen(): boolean {
@@ -351,6 +584,10 @@ export class TripDetailComponent implements OnInit {
     input.value = masked;
   }
 
+  onFinishKmInput(): void {
+    this.recalculateFinishConsumption();
+  }
+
   private parseBrazilianDate(value: string): Date | null {
     const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
     if (!match) return null;
@@ -369,5 +606,71 @@ export class TripDetailComponent implements OnInit {
     }
 
     return parsed;
+  }
+
+  syncOpeningDriverDisplay(): void {
+    const selectedVehicle = this.availableVehicles.find((vehicle: any) => vehicle.id === this.openingEditForm.vehicleId);
+    this.openingEditForm.driverId = selectedVehicle?.driverId || '';
+    this.selectedOpeningDriverDisplay = selectedVehicle?.driverName || 'Nenhum motorista vinculado a este veículo';
+  }
+
+  private toDateInputValue(value: string | Date | null | undefined): string {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return parsed.toISOString().slice(0, 10);
+  }
+
+  private getExpenseLitersByType(target: 'diesel' | 'arla'): number {
+    const normalizedTarget = target.toLowerCase();
+
+    return this.expenses.reduce((total: number, expense: any) => {
+      const typeName = ((expense?.expenseTypeName || expense?.type || '') as string).trim().toLowerCase();
+      const liters = Number(expense?.liters || 0);
+
+      if (liters <= 0) return total;
+
+      if (normalizedTarget === 'diesel') {
+        const isDiesel = typeName.includes('combust') || typeName.includes('diesel');
+        return isDiesel ? total + liters : total;
+      }
+
+      return typeName.includes('arla') ? total + liters : total;
+    }, 0);
+  }
+
+  private refreshFinishContext(): void {
+    if (!this.trip?.id) return;
+
+    this.loadingFinishMetrics = true;
+
+    this.tripService.getTripById(this.trip.id)
+      .pipe(finalize(() => {
+        this.loadingFinishMetrics = false;
+        this.cdr.detectChanges();
+      }))
+      .subscribe({
+        next: (res: any) => {
+          const freshTrip = res?.data || res;
+          const currentFinishKm = this.finishForm.finishKm;
+          const currentUnloadingDate = this.finishForm.unloadingDate;
+          const currentUnloadingLocation = this.finishForm.unloadingLocation;
+
+          this.trip = freshTrip;
+          this.finishForm = {
+            ...this.finishForm,
+            unloadingDate: currentUnloadingDate,
+            unloadingLocation: currentUnloadingLocation || freshTrip?.unloadingLocation || '',
+            finishKm: currentFinishKm
+          };
+
+          this.recalculateFinishConsumption();
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.finishError = 'Nao foi possivel atualizar as despesas antes do fechamento.';
+          this.cdr.detectChanges();
+        }
+      });
   }
 }

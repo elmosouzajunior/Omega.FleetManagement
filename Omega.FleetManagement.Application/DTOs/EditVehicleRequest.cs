@@ -5,5 +5,6 @@
         string LicensePlate,
         string Manufacturer,
         string? Color,
+        decimal? LoadCapacityTons,
         bool IsActive);    
 }

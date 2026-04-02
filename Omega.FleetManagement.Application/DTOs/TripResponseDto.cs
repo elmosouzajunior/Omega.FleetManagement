@@ -14,8 +14,12 @@
         public DateTime LoadingDate { get; set; }
         public DateTime UnloadingDate { get; set; }
         public decimal StartKm { get; set; }
+        public decimal TonValue { get; set; }
+        public decimal LoadedWeightTons { get; set; }
         public decimal FinishKm { get; set; }
         public decimal FreightValue { get; set; }
+        public decimal? DieselKmPerLiter { get; set; }
+        public decimal? ArlaKmPerLiter { get; set; }
         public decimal CommissionPercent { get; set; }
         public decimal CommissionValue { get; set; }
         public string? Status { get; set; }

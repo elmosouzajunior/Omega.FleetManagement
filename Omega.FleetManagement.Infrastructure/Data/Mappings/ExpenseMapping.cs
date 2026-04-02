@@ -14,6 +14,7 @@ public class ExpenseMapping : IEntityTypeConfiguration<Expense>
 
         builder.Property(e => e.Description).IsRequired().HasMaxLength(250);
         builder.Property(e => e.Value).HasPrecision(18, 2);
+        builder.Property(e => e.Liters).HasPrecision(18, 2).IsRequired(false);
         builder.Property(e => e.IsApproved).IsRequired().HasDefaultValue(false);
         builder.Property(e => e.TripId).IsRequired(false);
         builder.Property(e => e.VehicleId).IsRequired(false);

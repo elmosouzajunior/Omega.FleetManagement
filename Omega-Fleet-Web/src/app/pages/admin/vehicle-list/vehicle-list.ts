@@ -220,7 +220,7 @@ export class VehicleListComponent implements OnInit {
       },
       error: (err) => {
         this.savingVehicleExpense = false;
-        this.vehicleExpenseError = err.error?.message || 'Erro ao lançar despesa para o veículo.';
+        this.vehicleExpenseError = err.error?.message || 'Erro ao Lançar  despesa para o veículo.';
         this.cdr.detectChanges();
       }
     });

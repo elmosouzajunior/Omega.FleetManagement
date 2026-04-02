@@ -5,6 +5,7 @@
         string LicensePlate,
         string Manufacturer,
         string Color,
+        decimal? LoadCapacityTons,
         string? DriverName,
         Guid? DriverId,
         bool IsActive);    
