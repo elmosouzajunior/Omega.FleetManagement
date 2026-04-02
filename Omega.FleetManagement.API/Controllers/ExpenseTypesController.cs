@@ -47,8 +47,8 @@ namespace Omega.FleetManagement.API.Controllers
         {
             try
             {
-                await _expenseTypeAppService.CreateAsync(request);
-                return Ok(new { success = true, message = "Tipo de despesa cadastrado com sucesso." });
+                var created = await _expenseTypeAppService.CreateAsync(request);
+                return Ok(new { success = true, message = "Tipo de despesa cadastrado com sucesso.", data = created });
             }
             catch (ArgumentException ex)
             {

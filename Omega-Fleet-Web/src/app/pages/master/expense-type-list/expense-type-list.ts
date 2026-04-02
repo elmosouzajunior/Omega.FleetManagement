@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { ChangeDetectorRef, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { CompanyService } from '../../../services/company';
 import { ExpenseTypeService } from '../../../services/expense-type';
+import { finalize } from 'rxjs';
 
 type ExpenseTypeRow = {
   id: string;
@@ -17,6 +19,8 @@ type ExpenseTypeRow = {
   styleUrl: './expense-type-list.scss'
 })
 export class ExpenseTypeListComponent implements OnInit {
+  private readonly platformId = inject(PLATFORM_ID);
+
   companies: any[] = [];
   expenseTypes: ExpenseTypeRow[] = [];
 
@@ -39,10 +43,15 @@ export class ExpenseTypeListComponent implements OnInit {
 
   constructor(
     private readonly companyService: CompanyService,
-    private readonly expenseTypeService: ExpenseTypeService
+    private readonly expenseTypeService: ExpenseTypeService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
     this.loadCompanies();
   }
 
@@ -50,7 +59,9 @@ export class ExpenseTypeListComponent implements OnInit {
     this.loadingCompanies = true;
     this.errorMessage = '';
 
-    this.companyService.getCompanies().subscribe({
+    this.cdr.detectChanges();
+
+    this.companyService.getCompaniesCached().subscribe({
       next: (companies: any[]) => {
         this.companies = (companies || []).filter((c: any) => (c.isActive ?? c.IsActive ?? true));
         this.loadingCompanies = false;
@@ -59,10 +70,13 @@ export class ExpenseTypeListComponent implements OnInit {
           this.selectedCompanyId = this.companies[0].id || this.companies[0].Id;
           this.loadExpenseTypes();
         }
+
+        this.cdr.detectChanges();
       },
       error: () => {
         this.loadingCompanies = false;
         this.errorMessage = 'Nao foi possivel carregar as empresas.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -78,25 +92,26 @@ export class ExpenseTypeListComponent implements OnInit {
   loadExpenseTypes(): void {
     if (!this.selectedCompanyId) {
       this.expenseTypes = [];
+      this.loadingTypes = false;
+      this.cdr.detectChanges();
       return;
     }
 
     this.loadingTypes = true;
+    this.errorMessage = '';
+    this.cdr.detectChanges();
+
     this.expenseTypeService.getExpenseTypes(this.selectedCompanyId, this.showInactive).subscribe({
       next: (res: any) => {
         const data = res?.data || res?.$values || (Array.isArray(res) ? res : []);
-        this.expenseTypes = (data || []).map((item: any) => ({
-          id: item.id || item.Id,
-          companyId: item.companyId || item.CompanyId,
-          name: item.name || item.Name,
-          description: item.description || item.Description || null,
-          isActive: item.isActive ?? item.IsActive ?? false
-        }));
+        this.expenseTypes = (data || []).map((item: any) => this.mapExpenseType(item));
         this.loadingTypes = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.loadingTypes = false;
         this.errorMessage = 'Nao foi possivel carregar os tipos de despesa.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -112,21 +127,31 @@ export class ExpenseTypeListComponent implements OnInit {
     }
 
     this.saving = true;
+    this.cdr.detectChanges();
+
     this.expenseTypeService.createExpenseType({
       companyId: this.selectedCompanyId,
       name: trimmedName,
       description: (this.description || '').trim() || null
-    }).subscribe({
-      next: (res: any) => {
+    }).pipe(
+      finalize(() => {
         this.saving = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: (res: any) => {
         this.successMessage = res?.message || 'Tipo de despesa cadastrado com sucesso.';
+        const createdItem = res?.data ? this.mapExpenseType(res.data) : this.buildOptimisticExpenseType(trimmedName);
         this.name = '';
         this.description = '';
-        this.loadExpenseTypes();
+        this.expenseTypes = this.sortExpenseTypes([
+          createdItem,
+          ...this.expenseTypes.filter((item) => item.id !== createdItem.id)
+        ]);
       },
       error: (err) => {
-        this.saving = false;
         this.errorMessage = err?.error?.message || 'Erro ao cadastrar tipo de despesa.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -155,19 +180,33 @@ export class ExpenseTypeListComponent implements OnInit {
     }
 
     this.savingEdit = true;
+    this.cdr.detectChanges();
+
     this.expenseTypeService.updateExpenseType(this.editingType.id, {
       name: trimmedName,
       description: (this.editDescription || '').trim() || null
-    }).subscribe({
-      next: (res: any) => {
+    }).pipe(
+      finalize(() => {
         this.savingEdit = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: (res: any) => {
         this.successMessage = res?.message || 'Tipo de despesa atualizado com sucesso.';
+        this.expenseTypes = this.sortExpenseTypes(this.expenseTypes.map((item) =>
+          item.id === this.editingType?.id
+            ? {
+                ...item,
+                name: trimmedName,
+                description: (this.editDescription || '').trim() || null
+              }
+            : item
+        ));
         this.cancelEdit();
-        this.loadExpenseTypes();
       },
       error: (err) => {
-        this.savingEdit = false;
         this.errorMessage = err?.error?.message || 'Erro ao editar tipo de despesa.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -190,13 +229,39 @@ export class ExpenseTypeListComponent implements OnInit {
         this.successMessage = res?.message || (nextStatus
           ? 'Tipo de despesa ativado com sucesso.'
           : 'Tipo de despesa inativado com sucesso.');
-        this.expenseTypes = this.expenseTypes.map((item) =>
+        this.expenseTypes = this.sortExpenseTypes(this.expenseTypes.map((item) =>
           item.id === type.id ? { ...item, isActive: nextStatus } : item
-        );
+        ));
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.errorMessage = err?.error?.message || 'Erro ao atualizar status do tipo de despesa.';
+        this.cdr.detectChanges();
       }
     });
+  }
+
+  private mapExpenseType(item: any): ExpenseTypeRow {
+    return {
+      id: item.id || item.Id,
+      companyId: item.companyId || item.CompanyId,
+      name: item.name || item.Name,
+      description: item.description || item.Description || null,
+      isActive: item.isActive ?? item.IsActive ?? false
+    };
+  }
+
+  private buildOptimisticExpenseType(name: string): ExpenseTypeRow {
+    return {
+      id: crypto.randomUUID(),
+      companyId: this.selectedCompanyId,
+      name,
+      description: (this.description || '').trim() || null,
+      isActive: true
+    };
+  }
+
+  private sortExpenseTypes(items: ExpenseTypeRow[]): ExpenseTypeRow[] {
+    return [...items].sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'));
   }
 }

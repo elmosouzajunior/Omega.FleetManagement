@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, shareReplay } from 'rxjs';
+import { Observable, catchError, shareReplay, tap, throwError } from 'rxjs';
 import { Company } from '../shared/models/company';
 import { environment } from '../../environments/environment';
 
@@ -19,17 +19,31 @@ export class CompanyService {
 
   getCompaniesCached(forceRefresh = false): Observable<Company[]> {
     if (!this.companiesCache$ || forceRefresh) {
-      this.companiesCache$ = this.getCompanies().pipe(shareReplay(1));
+      this.companiesCache$ = this.getCompanies().pipe(
+        shareReplay(1),
+        catchError((err) => {
+          this.companiesCache$ = null;
+          return throwError(() => err);
+        })
+      );
     }
 
     return this.companiesCache$;
   }
 
   createCompany(companyData: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/companies`, companyData);
+    return this.http.post(`${this.apiUrl}/companies`, companyData).pipe(
+      tap(() => this.invalidateCompaniesCache())
+    );
   }
 
   updateCompany(id: string, companyData: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/companies/${id}`, companyData);
+    return this.http.put(`${this.apiUrl}/companies/${id}`, companyData).pipe(
+      tap(() => this.invalidateCompaniesCache())
+    );
+  }
+
+  invalidateCompaniesCache(): void {
+    this.companiesCache$ = null;
   }
 }

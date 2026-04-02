@@ -40,7 +40,7 @@ namespace Omega.FleetManagement.Application.Services
             }).ToList();
         }
 
-        public async Task CreateAsync(CreateExpenseTypeRequest request)
+        public async Task<ExpenseTypeResponseDto> CreateAsync(CreateExpenseTypeRequest request)
         {
             if (request.CompanyId == Guid.Empty)
                 throw new ArgumentException("Empresa e obrigatoria.");
@@ -55,6 +55,15 @@ namespace Omega.FleetManagement.Application.Services
             var expenseType = new ExpenseType(request.CompanyId, request.Name.Trim(), request.Description?.Trim());
             await _expenseTypeRepository.AddAsync(expenseType);
             await _uow.CommitAsync();
+
+            return new ExpenseTypeResponseDto
+            {
+                Id = expenseType.Id,
+                CompanyId = expenseType.CompanyId,
+                Name = expenseType.Name,
+                Description = expenseType.Description,
+                IsActive = expenseType.IsActive
+            };
         }
 
         public async Task<bool> UpdateAsync(Guid id, UpdateExpenseTypeRequest request)
