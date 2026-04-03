@@ -31,6 +31,16 @@
           <input type="hidden" formControlName="driverId">
         </div>
 
+        <div class="col-md-4 mb-3">
+          <label class="form-label fw-bold">Comissão do Motorista</label>
+          <select class="form-select modern-select" formControlName="commissionPercent">
+            <option [ngValue]="null">Selecione a comissão</option>
+            <option *ngFor="let commission of selectedDriverCommissionRates" [ngValue]="commission">
+              {{ commission | number:'1.0-2' }} %
+            </option>
+          </select>
+        </div>
+
         <hr class="my-3 text-faded">
 
         <div class="col-md-12 mb-3">
@@ -66,7 +76,7 @@
 
         <div class="col-md-4 mb-3">
           <label class="form-label fw-bold">Peso Carregado (T)</label>
-          <input type="text" inputmode="decimal" class="form-control" formControlName="loadedWeightTons" placeholder="0,00" (input)="onLoadedWeightChange($event)">
+          <input type="text" inputmode="decimal" class="form-control" [value]="loadedWeightDisplay" placeholder="0,000" (input)="onLoadedWeightChange($event)">
         </div>
 
         <div class="col-md-4 mb-3">
@@ -90,7 +100,7 @@
 
       <div class="d-flex justify-content-end gap-3 mt-4">
         <button type="button" class="btn btn-light"
-          (click)="tripForm.reset(); selectedDriverDisplay = ''">Limpar</button>
+          (click)="tripForm.reset(); selectedDriverDisplay = ''; loadedWeightDisplay = ''">Limpar</button>
         <button type="submit" class="btn-new" [disabled]="tripForm.invalid">
           Confirmar e Abrir Viagem
         </button>

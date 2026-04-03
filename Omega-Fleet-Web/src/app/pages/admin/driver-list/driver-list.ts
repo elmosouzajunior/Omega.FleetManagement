@@ -74,6 +74,7 @@ export class DriverListComponent implements OnInit {
   // Método para abrir o modal de edição
   openEditModal(driver: any) {
     this.driverToEdit = { ...driver }; // Cópia para não alterar a tabela antes do OK
+    this.driverToEdit.commissionRates = [...(driver.commissionRates || [driver.commissionRate])];
     this.errorMessage = '';
     this.showEditModal = true;
     this.cdr.detectChanges();
@@ -83,6 +84,11 @@ export class DriverListComponent implements OnInit {
   saveDriverEdit() {
     if (!this.driverToEdit.name || !this.driverToEdit.cpf) {
       this.errorMessage = 'Nome e CPF são obrigatórios.';
+      return;
+    }
+
+    if (!Array.isArray(this.driverToEdit.commissionRates) || this.driverToEdit.commissionRates.length === 0) {
+      this.errorMessage = 'Informe ao menos uma comissão.';
       return;
     }
 
@@ -99,5 +105,19 @@ export class DriverListComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  addCommissionToEdit(): void {
+    if (!this.driverToEdit) return;
+    if (!Array.isArray(this.driverToEdit.commissionRates)) {
+      this.driverToEdit.commissionRates = [];
+    }
+
+    this.driverToEdit.commissionRates.push(0);
+  }
+
+  removeCommissionFromEdit(index: number): void {
+    if (!this.driverToEdit?.commissionRates || this.driverToEdit.commissionRates.length === 1) return;
+    this.driverToEdit.commissionRates.splice(index, 1);
   }
 }

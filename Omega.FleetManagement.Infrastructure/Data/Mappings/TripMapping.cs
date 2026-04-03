@@ -24,8 +24,13 @@ public class TripMapping : IEntityTypeConfiguration<Trip>
 
         builder.Property(t => t.LoadedWeightTons)
             .HasColumnName("LoadedWeightTons")
-            .HasColumnType("numeric(18,2)")
+            .HasColumnType("numeric(18,3)")
             .HasDefaultValue(0);
+
+        builder.Property(t => t.UnloadedWeightTons)
+            .HasColumnName("UnloadedWeightTons")
+            .HasColumnType("numeric(18,3)")
+            .IsRequired(false);
 
         builder.Property(t => t.FinishKm)
             .HasColumnName("FinishKm")

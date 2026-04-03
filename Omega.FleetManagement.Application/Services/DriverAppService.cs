@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Omega.FleetManagement.Application.DTOs;
 using Omega.FleetManagement.Application.Interfaces;
+using Omega.FleetManagement.Domain.Entities;
 using Omega.FleetManagement.Domain.Interfaces;
 using Omega.FleetManagement.Infrastructure.Data.Context;
 using Omega.FleetManagement.Infrastructure.Data.Identity;
@@ -74,7 +75,7 @@ namespace Omega.FleetManagement.Application.Services
                         companyId,
                         request.Name,
                         normalizedCpf,
-                        request.CommissionRate,
+                        request.CommissionRates,
                         user.Id
                     );
 
@@ -100,6 +101,7 @@ namespace Omega.FleetManagement.Application.Services
                 d.Name,
                 d.Cpf,
                 d.CommissionRate,
+                d.GetCommissionRates().ToList(),
                 d.IsActive
             )).ToList();
         }
@@ -144,7 +146,10 @@ namespace Omega.FleetManagement.Application.Services
                         }
                     }
 
-                    driver.UpdateInfo(request.Name, normalizedCpf, request.CommissionRate, request.IsActive);
+                    var normalizedRates = NormalizeCommissionRates(request.CommissionRates);
+
+                    driver.UpdateInfo(request.Name, normalizedCpf, normalizedRates[0], request.IsActive);
+                    await ReplaceDriverCommissionsAsync(driver, normalizedRates);
 
                     await _driverRepository.UpdateAsync(driver);
                     await _uow.CommitAsync();
@@ -157,6 +162,41 @@ namespace Omega.FleetManagement.Application.Services
                     throw;
                 }
             });
+        }
+
+        private static List<decimal> NormalizeCommissionRates(IEnumerable<decimal> commissionRates)
+        {
+            var normalizedRates = (commissionRates ?? Enumerable.Empty<decimal>())
+                .Select(rate => decimal.Round(rate, 2, MidpointRounding.AwayFromZero))
+                .Distinct()
+                .OrderBy(rate => rate)
+                .ToList();
+
+            if (normalizedRates.Count == 0)
+                throw new ArgumentException("Informe ao menos uma comissão para o motorista.");
+
+            return normalizedRates;
+        }
+
+        private async Task ReplaceDriverCommissionsAsync(Driver driver, IEnumerable<decimal> commissionRates)
+        {
+            var existingCommissions = await _context.DriverCommissions
+                .Where(c => c.DriverId == driver.Id)
+                .ToListAsync();
+
+            if (existingCommissions.Count > 0)
+            {
+                _context.DriverCommissions.RemoveRange(existingCommissions);
+            }
+
+            var normalizedRates = NormalizeCommissionRates(commissionRates);
+
+            foreach (var rate in normalizedRates)
+            {
+                var commission = new DriverCommission(rate);
+                commission.AttachToDriver(driver.Id);
+                await _context.DriverCommissions.AddAsync(commission);
+            }
         }
     }
 }

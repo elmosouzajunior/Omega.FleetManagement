@@ -5,6 +5,7 @@ namespace Omega.FleetManagement.Application.DTOs
     public record OpenTripRequest(
         Guid DriverId,
         Guid VehicleId,
+        decimal CommissionPercent,
         string LoadingLocation,
         string UnloadingLocation,
         DateTime LoadingDate,

@@ -33,7 +33,7 @@ export class TripService {
     const formData = new FormData();
     Object.keys(tripData).forEach(key => {
       if (tripData[key] !== null && tripData[key] !== undefined) {
-        formData.append(key, tripData[key]);
+        formData.append(key, this.serializeFormDataValue(tripData[key]));
       }
     });
     // FormData não deve ter Content-Type manual, o browser define o boundary automaticamente, 
@@ -45,7 +45,7 @@ export class TripService {
     return this.http.put<any>(`${this.apiUrl}/${id}/opening`, payload, { headers: this.getHeaders() });
   }
 
-  finishTrip(id: string, finishData: { unloadingDate: string, finishKm: number, unloadingLocation: string, dieselKmPerLiter?: number | null, arlaKmPerLiter?: number | null }): Observable<any> {
+  finishTrip(id: string, finishData: { unloadingDate: string, finishKm: number, unloadingLocation: string, unloadedWeightTons: number, freightValue: number, dieselKmPerLiter?: number | null, arlaKmPerLiter?: number | null }): Observable<any> {
     // Faltava o { headers } aqui
     return this.http.patch<any>(`${this.apiUrl}/${id}/finish`, finishData, { headers: this.getHeaders() });
   }
@@ -72,5 +72,20 @@ export class TripService {
   getExpenseTypes(): Observable<any> {
     // Faltava o { headers } aqui
     return this.http.get<any>(this.expenseTypesUrl, { headers: this.getHeaders() });
+  }
+
+  private serializeFormDataValue(value: unknown): string | Blob {
+    if (value instanceof Blob) {
+      return value;
+    }
+
+    if (typeof value === 'number') {
+      return value.toLocaleString('pt-BR', {
+        useGrouping: false,
+        maximumFractionDigits: 15
+      });
+    }
+
+    return String(value);
   }
 }

@@ -34,7 +34,7 @@ public class DriverAppServiceTests : IDisposable
     {
         var companyId = Guid.NewGuid();
         var capturedUser = (ApplicationUser?)null;
-        var persistedDriver = new Driver(companyId, Guid.NewGuid(), "Temp", "00000000000", 1m);
+        var persistedDriver = new Driver(companyId, Guid.NewGuid(), "Temp", "00000000000", new[] { 1m });
 
         var userManager = CreateUserManager();
         userManager
@@ -51,10 +51,10 @@ public class DriverAppServiceTests : IDisposable
 
         var driverService = new Mock<IDriverService>();
         driverService
-            .Setup(x => x.CreateDriverAsync(companyId, "Motorista Teste", "12345678901", 12.5m, It.IsAny<Guid>()))
-            .ReturnsAsync((Guid _, string name, string cpf, decimal rate, Guid userId) =>
+            .Setup(x => x.CreateDriverAsync(companyId, "Motorista Teste", "12345678901", It.Is<IEnumerable<decimal>>(rates => rates.SequenceEqual(new[] { 12.5m, 15m })), It.IsAny<Guid>()))
+            .ReturnsAsync((Guid _, string name, string cpf, IEnumerable<decimal> rates, Guid userId) =>
             {
-                persistedDriver = new Driver(companyId, userId, name, cpf, rate);
+                persistedDriver = new Driver(companyId, userId, name, cpf, rates);
                 return persistedDriver;
             });
 
@@ -72,7 +72,7 @@ public class DriverAppServiceTests : IDisposable
             uow.Object);
 
         var result = await sut.CreateDriverAsync(
-            new CreateDriverRequest("Motorista Teste", "123.456.789-01", 12.5m, "123456"),
+            new CreateDriverRequest("Motorista Teste", "123.456.789-01", new List<decimal> { 12.5m, 15m }, "123456"),
             companyId);
 
         Assert.True(result);

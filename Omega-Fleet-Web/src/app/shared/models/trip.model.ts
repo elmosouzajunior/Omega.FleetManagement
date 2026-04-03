@@ -7,6 +7,7 @@ export interface OpenTripRequest {
     startKm: number;
     tonValue: number;
     loadedWeightTons: number;
+    unloadedWeightTons?: number | null;
     freightValue: number;
     freightAttachment?: File;
 }

@@ -81,7 +81,7 @@
         </div>
         <div class="line-item">
           <span>Peso carregado</span>
-          <strong>{{ loadedWeightTons | number:'1.2-2' }} T</strong>
+          <strong>{{ loadedWeightTons | number:'1.0-3' }} T</strong>
         </div>
         <div class="line-item">
           <span>Valor total do frete</span>
@@ -103,6 +103,10 @@
           <div class="line-item">
             <span>KM final</span>
             <strong>{{ trip.finishKm | number:'1.0-0' }} km</strong>
+          </div>
+          <div class="line-item">
+            <span>Peso descarregamento</span>
+            <strong>{{ unloadedWeightTons !== null ? ((unloadedWeightTons | number:'1.0-3') + ' T') : '-' }}</strong>
           </div>
           <div class="line-item">
             <span>KM rodados</span>
@@ -210,7 +214,7 @@
 
         <div class="form-group">
           <label>Peso carregado (T) *</label>
-          <input type="text" inputmode="decimal" [ngModel]="openingEditForm.loadedWeightTons" (ngModelChange)="onOpeningLoadedWeightChange($event)" [disabled]="savingOpeningEdit" />
+          <input type="text" inputmode="decimal" [ngModel]="openingLoadedWeightDisplay" (ngModelChange)="onOpeningLoadedWeightChange($event)" [disabled]="savingOpeningEdit" placeholder="0,000" />
         </div>
 
         <div class="form-group full">
@@ -261,6 +265,28 @@
       </div>
 
       <div class="form-group">
+        <label>Peso descarregamento (T) *</label>
+        <input
+          type="text"
+          inputmode="decimal"
+          [ngModel]="finishUnloadedWeightDisplay"
+          (ngModelChange)="onFinishUnloadedWeightChange($event)"
+          [disabled]="savingFinish"
+          placeholder="0,000" />
+      </div>
+
+      <div class="form-group">
+        <label>Valor total do frete *</label>
+        <input
+          type="text"
+          inputmode="decimal"
+          [ngModel]="finishFreightValueDisplay"
+          (ngModelChange)="onFinishFreightValueChange($event)"
+          [disabled]="savingFinish || !finishFreightIsEditable"
+          placeholder="0,00" />
+      </div>
+
+      <div class="form-group">
         <label>Diesel - KM/L</label>
         <input type="number" min="0.01" step="0.01" [(ngModel)]="finishForm.dieselKmPerLiter" [disabled]="savingFinish" readonly />
       </div>
@@ -271,6 +297,7 @@
       </div>
 
       <p class="helper-text">{{ finishConsumptionSummary }}</p>
+      <p class="helper-text">{{ finishFreightRuleSummary }}</p>
       <p *ngIf="finishError" class="error-msg">{{ finishError }}</p>
     </div>
 

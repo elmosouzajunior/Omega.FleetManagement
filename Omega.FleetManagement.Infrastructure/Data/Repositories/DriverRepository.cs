@@ -15,12 +15,16 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
 
         public async Task<Driver?> GetByIdAsync(Guid driverId)
         {
-            return await _context.Drivers.FindAsync(driverId);
+            return await _context.Drivers
+                .Include(d => d.Commissions)
+                .FirstOrDefaultAsync(d => d.Id == driverId);
         }
 
         public async Task<Driver?> GetByIdAsync(Guid driverId, Guid companyId)
         {
-            return await _context.Drivers.FirstOrDefaultAsync(d => d.Id == driverId && d.CompanyId == companyId);
+            return await _context.Drivers
+                .Include(d => d.Commissions)
+                .FirstOrDefaultAsync(d => d.Id == driverId && d.CompanyId == companyId);
         }
 
         public async Task<Driver?> GetByCpfAsync(string cpf)
@@ -40,7 +44,10 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
 
         public async Task<List<Driver>> GetByCompanyIdAsync(Guid companyId)
         {
-            return await _context.Drivers.Where(d => d.CompanyId == companyId).ToListAsync();
+            return await _context.Drivers
+                .Include(d => d.Commissions)
+                .Where(d => d.CompanyId == companyId)
+                .ToListAsync();
         }
 
         public Task UpdateAsync(Driver driver)

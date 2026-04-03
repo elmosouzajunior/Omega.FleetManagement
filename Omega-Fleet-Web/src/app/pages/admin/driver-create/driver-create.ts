@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DriverService } from '../../../services/driver';
 import { CommonModule } from '@angular/common';
 
@@ -15,9 +15,22 @@ export class DriverCreateComponent {
     this.driverForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       cpf: ['', [Validators.required, Validators.pattern(/^\d{11}$/)]], // Valida 11 números
-      commissionRate: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
+      commissionRates: this.fb.array([this.createCommissionControl()]),
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
+  }
+
+  get commissionRates(): FormArray {
+    return this.driverForm.get('commissionRates') as FormArray;
+  }
+
+  addCommission(): void {
+    this.commissionRates.push(this.createCommissionControl());
+  }
+
+  removeCommission(index: number): void {
+    if (this.commissionRates.length === 1) return;
+    this.commissionRates.removeAt(index);
   }
 
   onSubmit() {
@@ -26,6 +39,10 @@ export class DriverCreateComponent {
         next: (res) => {
           alert('Motorista cadastrado com sucesso!');
           this.driverForm.reset();
+          while (this.commissionRates.length > 1) {
+            this.commissionRates.removeAt(this.commissionRates.length - 1);
+          }
+          this.commissionRates.at(0).setValue(0);
         },
         error: (err) => {
           const errorMessage = err.error?.message || 'Erro ao cadastrar motorista.';
@@ -33,6 +50,10 @@ export class DriverCreateComponent {
         }
       });
     }
+  }
+
+  private createCommissionControl() {
+    return this.fb.control(0, [Validators.required, Validators.min(0), Validators.max(100)]);
   }
 }
 

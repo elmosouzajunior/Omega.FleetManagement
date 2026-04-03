@@ -1,4 +1,4 @@
-﻿namespace Omega.FleetManagement.Application.DTOs
+namespace Omega.FleetManagement.Application.DTOs
 {
-    public record CreateDriverRequest(string Name, string Cpf, decimal CommissionRate, string Password);
+    public record CreateDriverRequest(string Name, string Cpf, List<decimal> CommissionRates, string Password);
 }

@@ -16,6 +16,7 @@
         public decimal StartKm { get; set; }
         public decimal TonValue { get; set; }
         public decimal LoadedWeightTons { get; set; }
+        public decimal? UnloadedWeightTons { get; set; }
         public decimal FinishKm { get; set; }
         public decimal FreightValue { get; set; }
         public decimal? DieselKmPerLiter { get; set; }

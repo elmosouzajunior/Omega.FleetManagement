@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TripService } from '../../../services/trip';
 import { VehicleService } from '../../../services/vehicle'; // Importe o seu serviço de veículos
+import { DriverService } from '../../../services/driver';
 import { Router } from '@angular/router';
 
 @Component({
@@ -14,6 +15,7 @@ export class TripOpenComponent implements OnInit {
   private fb = inject(FormBuilder);
   private tripService = inject(TripService);
   private vehicleService = inject(VehicleService);
+  private driverService = inject(DriverService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
@@ -23,12 +25,15 @@ export class TripOpenComponent implements OnInit {
   isAdmin: boolean = false;
   currentUserId: string = '';
   activeVehicles: any[] = [];
+  availableDrivers: any[] = [];
   selectedDriverDisplay: string = '';
+  loadedWeightDisplay = '';
 
   constructor() {
     this.tripForm = this.fb.group({
       vehicleId: ['', Validators.required],
       driverId: ['', Validators.required],
+      commissionPercent: [null, [Validators.required, Validators.min(0), Validators.max(100)]],
       loadingLocation: ['', Validators.required],
       unloadingLocation: ['', Validators.required],
       loadingDate: [new Date().toISOString().substring(0, 10), Validators.required],
@@ -52,6 +57,7 @@ export class TripOpenComponent implements OnInit {
         this.currentUserId = payload.UserId;
 
         this.loadVehicles();
+        this.loadDrivers();
 
       } catch (e) {
         console.error('Erro ao ler dados do usuário', e);
@@ -79,6 +85,15 @@ export class TripOpenComponent implements OnInit {
     });
   }
 
+  loadDrivers() {
+    this.driverService.getDrivers().subscribe({
+      next: (drivers: any) => {
+        this.availableDrivers = drivers?.$values || (Array.isArray(drivers) ? drivers : []);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   onVehicleChange(event: any) {
   const vehicleId = event.target.value;
   const vehicle = this.activeVehicles.find(v => v.id === vehicleId);
@@ -90,12 +105,13 @@ export class TripOpenComponent implements OnInit {
     // Precisamos passar o ID real para o formControl, não apenas o nome para a tela.
     this.tripForm.patchValue({ 
       vehicleId: vehicle.id,
-      driverId: vehicle.driverId // <--- Certifique-se que o nome da propriedade no JSON é driverId
+      driverId: vehicle.driverId,
+      commissionPercent: this.getDriverCommissionRates(vehicle.driverId)[0] ?? null
     });
 
   } else {
     this.selectedDriverDisplay = '';
-    this.tripForm.patchValue({ vehicleId: '', driverId: '' });
+    this.tripForm.patchValue({ vehicleId: '', driverId: '', commissionPercent: null });
   }
   
   this.cdr.detectChanges();
@@ -159,6 +175,16 @@ export class TripOpenComponent implements OnInit {
     this.tripForm.patchValue({ freightValue: numericValue });
   }
 
+  get selectedDriverCommissionRates(): number[] {
+    const driverId = this.tripForm.get('driverId')?.value;
+    return this.getDriverCommissionRates(driverId);
+  }
+
+  private getDriverCommissionRates(driverId: string | null | undefined): number[] {
+    const driver = this.availableDrivers.find((item: any) => item.id === driverId);
+    return driver?.commissionRates || (driver?.commissionRate !== undefined ? [driver.commissionRate] : []);
+  }
+
   recalculateTotalFreight(): void {
     const tonValue = Number(this.tripForm.get('tonValue')?.value || 0);
     const loadedWeightTons = Number(this.tripForm.get('loadedWeightTons')?.value || 0);
@@ -178,24 +204,41 @@ export class TripOpenComponent implements OnInit {
 
   onLoadedWeightChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const numericValue = this.parseDecimalInput(input.value);
+    const { displayValue, numericValue } = this.normalizeDecimalInput(input.value);
+    input.value = displayValue;
+    this.loadedWeightDisplay = displayValue;
     this.tripForm.patchValue({ loadedWeightTons: numericValue }, { emitEvent: false });
     this.recalculateTotalFreight();
   }
 
-  private parseDecimalInput(value: string | number | null | undefined): number | null {
-    if (value === null || value === undefined) return null;
+  private normalizeDecimalInput(value: string | number | null | undefined): { displayValue: string; numericValue: number | null } {
+    if (value === null || value === undefined) {
+      return { displayValue: '', numericValue: null };
+    }
 
-    const normalized = value
+    const sanitized = value
       .toString()
       .trim()
       .replace(/\s/g, '')
       .replace(/\./g, '')
-      .replace(',', '.');
+      .replace(/[^0-9,]/g, '');
 
-    if (!normalized) return null;
+    if (!sanitized) {
+      return { displayValue: '', numericValue: null };
+    }
 
-    const parsed = Number(normalized);
-    return Number.isFinite(parsed) ? parsed : null;
+    const hasComma = sanitized.includes(',');
+    const [rawIntegerPart, ...fractionParts] = sanitized.split(',');
+    const integerPart = (rawIntegerPart || '').replace(/,/g, '') || '0';
+    const fractionPart = fractionParts.join('').slice(0, 3);
+    const displayValue = hasComma
+      ? `${integerPart},${fractionPart}`
+      : integerPart;
+    const numericValue = Number(`${integerPart}${fractionPart ? `.${fractionPart}` : ''}`);
+
+    return {
+      displayValue,
+      numericValue: Number.isFinite(numericValue) ? numericValue : null
+    };
   }
 }

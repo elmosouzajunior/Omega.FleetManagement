@@ -263,6 +263,27 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                     b.ToTable("drivers", (string)null);
                 });
 
+            modelBuilder.Entity("Omega.FleetManagement.Domain.Entities.DriverCommission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Rate")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.HasKey("Id")
+                        .HasName("pk_driver_commissions");
+
+                    b.HasIndex("DriverId", "Rate")
+                        .IsUnique();
+
+                    b.ToTable("driver_commissions", (string)null);
+                });
+
             modelBuilder.Entity("Omega.FleetManagement.Domain.Entities.Expense", b =>
                 {
                     b.Property<Guid>("Id")
@@ -395,7 +416,7 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
 
                     b.Property<decimal>("LoadedWeightTons")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(18,2)")
+                        .HasColumnType("numeric(18,3)")
                         .HasDefaultValue(0m)
                         .HasColumnName("LoadedWeightTons");
 
@@ -422,6 +443,10 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasDefaultValue(0m)
                         .HasColumnName("TonValue");
+
+                    b.Property<decimal?>("UnloadedWeightTons")
+                        .HasColumnType("numeric(18,3)")
+                        .HasColumnName("UnloadedWeightTons");
 
                     b.Property<DateTime?>("UnloadingDate")
                         .HasColumnType("datetime2")
@@ -645,6 +670,17 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Omega.FleetManagement.Domain.Entities.DriverCommission", b =>
+                {
+                    b.HasOne("Omega.FleetManagement.Domain.Entities.Driver", "Driver")
+                        .WithMany("Commissions")
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
+                });
+
             modelBuilder.Entity("Omega.FleetManagement.Domain.Entities.Expense", b =>
                 {
                     b.HasOne("Omega.FleetManagement.Domain.Entities.ExpenseType", "ExpenseType")
@@ -712,6 +748,11 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                     b.Navigation("Users");
 
                     b.Navigation("Vehicles");
+                });
+
+            modelBuilder.Entity("Omega.FleetManagement.Domain.Entities.Driver", b =>
+                {
+                    b.Navigation("Commissions");
                 });
 
             modelBuilder.Entity("Omega.FleetManagement.Domain.Entities.ExpenseType", b =>

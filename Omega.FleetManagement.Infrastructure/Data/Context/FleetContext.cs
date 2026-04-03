@@ -14,6 +14,7 @@ namespace Omega.FleetManagement.Infrastructure.Data.Context
         public DbSet<Trip> Trips { get; set; }
         public DbSet<Vehicle> Vehicles { get; set; }
         public DbSet<Driver> Drivers { get; set; }
+        public DbSet<DriverCommission> DriverCommissions { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<CompanyAdmin> CompanyAdmins { get; set; }
         public DbSet<Expense> Expenses { get; set; }

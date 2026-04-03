@@ -39,7 +39,7 @@
             driver.cpf.substring(9,11)) : '---'
             }}
           </td>
-          <td class="col-numeric"> {{ driver.commissionRate | number:'1.1-1' }} % </td>
+          <td class="col-numeric"> {{ (driver.commissionRates || [driver.commissionRate]).join(' | ') }} % </td>
           <td>
             <span class="badge" [ngClass]="driver.isActive ? 'bg-success' : 'bg-danger'">
               {{ driver.isActive ? 'Ativo' : 'Inativo' }}
@@ -76,8 +76,12 @@
         </div>
 
         <div class="form-group" style="margin-top: 15px;">
-          <label>Comissão (%):</label>
-          <input type="number" [(ngModel)]="driverToEdit.commissionRate" class="modern-select">
+          <label>Comissões (%):</label>
+          <div *ngFor="let commission of driverToEdit.commissionRates; let i = index" style="display:flex; gap:8px; margin-bottom:8px;">
+            <input type="number" [(ngModel)]="driverToEdit.commissionRates[i]" class="modern-select">
+            <button type="button" class="btn btn-outline-danger btn-sm" (click)="removeCommissionFromEdit(i)" [disabled]="driverToEdit.commissionRates.length === 1">Remover</button>
+          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="addCommissionToEdit()">Adicionar comissão</button>
         </div>
 
         <div class="form-group" style="margin-top: 15px;">

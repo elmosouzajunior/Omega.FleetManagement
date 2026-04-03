@@ -51,6 +51,7 @@ namespace Omega.FleetManagement.Application.Services
                     companyId,
                     currentDriverId,
                     currentVehicleId,
+                    dto.CommissionPercent,
                     dto.LoadingLocation,
                     dto.UnloadingLocation,
                     dto.LoadingDate.ToUniversalTime(),
@@ -122,6 +123,8 @@ namespace Omega.FleetManagement.Application.Services
                 request.UnloadingDate.ToUniversalTime(),
                 request.UnloadingLocation,
                 request.FinishKm,
+                request.UnloadedWeightTons,
+                request.FreightValue,
                 request.DieselKmPerLiter,
                 request.ArlaKmPerLiter);
 
@@ -209,6 +212,7 @@ namespace Omega.FleetManagement.Application.Services
                 StartKm = t.StartKm,
                 TonValue = t.TonValue,
                 LoadedWeightTons = t.LoadedWeightTons,
+                UnloadedWeightTons = t.UnloadedWeightTons,
                 FinishKm = t.FinishKm,
                 FreightValue = t.FreightValue,
                 DieselKmPerLiter = t.DieselKmPerLiter,
@@ -241,6 +245,7 @@ namespace Omega.FleetManagement.Application.Services
                 StartKm = trip.StartKm,
                 TonValue = trip.TonValue,
                 LoadedWeightTons = trip.LoadedWeightTons,
+                UnloadedWeightTons = trip.UnloadedWeightTons,
                 FinishKm = trip.FinishKm,
                 FreightValue = trip.FreightValue,
                 DieselKmPerLiter = trip.DieselKmPerLiter,

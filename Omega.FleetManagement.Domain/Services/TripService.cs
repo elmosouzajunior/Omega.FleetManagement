@@ -20,6 +20,7 @@ namespace Omega.FleetManagement.Domain.Services
             Guid companyId,
             Guid driverId,
             Guid vehicleId,
+            decimal commissionPercent,
             string loadingLocation,
             string unloadingLocation,
             DateTime loadingDate,
@@ -52,6 +53,8 @@ namespace Omega.FleetManagement.Domain.Services
             if (!vehicle.IsActive) throw new ArgumentException("O veículo informado está inativo.");
             if (vehicle.DriverId.HasValue && vehicle.DriverId.Value != driverId)
                 throw new ArgumentException("O veículo está vinculado a outro motorista.");
+            if (!driver.HasCommissionRate(commissionPercent))
+                throw new ArgumentException("A comissão selecionada não pertence ao motorista informado.");
 
             if (loadingDate == default) throw new ArgumentException("Data de carregamento é obrigatória.");
             if (loadingDate > DateTime.UtcNow.AddDays(1)) throw new ArgumentException("Data de carregamento não pode ser futura.");
@@ -74,7 +77,7 @@ namespace Omega.FleetManagement.Domain.Services
                 tonValue,
                 loadedWeightTons,
                 freightValue,
-                driver.CommissionRate,
+                commissionPercent,
                 attachmentPath);
 
             return trip;
@@ -174,7 +177,7 @@ namespace Omega.FleetManagement.Domain.Services
             return trip;
         }
 
-        public async Task<Trip> FinishTripAsync(Guid tripId, Guid companyId, DateTime unloadingDate, string? unloadingLocation, decimal finishKm, decimal? dieselKmPerLiter, decimal? arlaKmPerLiter)
+        public async Task<Trip> FinishTripAsync(Guid tripId, Guid companyId, DateTime unloadingDate, string? unloadingLocation, decimal finishKm, decimal unloadedWeightTons, decimal freightValue, decimal? dieselKmPerLiter, decimal? arlaKmPerLiter)
         {
             var trip = await _tripRepository.GetByIdAsync(tripId, companyId);
             if (trip == null)
@@ -197,13 +200,32 @@ namespace Omega.FleetManagement.Domain.Services
             if (string.IsNullOrWhiteSpace(destination))
                 throw new ArgumentException("Destino não informado na abertura da viagem.");
 
+            if (unloadedWeightTons <= 0)
+                throw new ArgumentException("Peso descarregamento deve ser maior que zero.");
+
+            if (freightValue <= 0)
+                throw new ArgumentException("Valor do frete deve ser maior que zero.");
+
             if (dieselKmPerLiter.HasValue && dieselKmPerLiter.Value <= 0)
                 throw new ArgumentException("Diesel - KM/L deve ser maior que zero.");
 
             if (arlaKmPerLiter.HasValue && arlaKmPerLiter.Value <= 0)
                 throw new ArgumentException("Arla - KM/L deve ser maior que zero.");
 
-            trip.Finish(destination, unloadingDate, finishKm, dieselKmPerLiter, arlaKmPerLiter);
+            var minimumLossPercent = 0.26m / 100m;
+            var minimumAllowedWeightBeforeRecalc = trip.LoadedWeightTons * (1 - minimumLossPercent);
+            var shouldUseUnloadedWeight = unloadedWeightTons <= minimumAllowedWeightBeforeRecalc;
+            var expectedFreightValue = shouldUseUnloadedWeight
+                ? decimal.Round(trip.TonValue * unloadedWeightTons, 2, MidpointRounding.AwayFromZero)
+                : trip.FreightValue;
+
+            if (!shouldUseUnloadedWeight && freightValue != trip.FreightValue)
+                throw new ArgumentException("Valor do frete so pode ser alterado quando houver quebra de peso igual ou superior a 0,26%.");
+
+            if (!shouldUseUnloadedWeight && Math.Abs(freightValue - expectedFreightValue) > 0.01m)
+                throw new ArgumentException("Valor do frete nao confere com o valor original da viagem.");
+
+            trip.Finish(destination, unloadingDate, finishKm, unloadedWeightTons, freightValue, dieselKmPerLiter, arlaKmPerLiter);
             return trip;
         }
     }

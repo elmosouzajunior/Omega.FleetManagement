@@ -37,6 +37,11 @@ namespace Omega.FleetManagement.Infrastructure.Data.Mappings
             // Índice único Composto (CPF + Empresa)
             builder.HasIndex(d => new { d.Cpf, d.CompanyId })
                 .IsUnique();
+
+            builder.HasMany(d => d.Commissions)
+                .WithOne(c => c.Driver)
+                .HasForeignKey(c => c.DriverId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

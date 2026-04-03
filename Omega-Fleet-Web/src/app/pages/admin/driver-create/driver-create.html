@@ -20,11 +20,15 @@
             </div>
           </div>
           <div class="col-md-4 mb-3">
-            <label class="form-label fw-bold">Comissão (%)</label>
-            <div class="input-group input-group-lg">
-              <input type="number" class="form-group form-control" formControlName="commissionRate">
-              <span class="input-group-text">%</span>
+            <label class="form-label fw-bold">Comissões (%)</label>
+            <div formArrayName="commissionRates">
+              <div class="input-group input-group-lg mb-2" *ngFor="let commission of commissionRates.controls; let i = index">
+                <input type="number" class="form-group form-control" [formControlName]="i">
+                <span class="input-group-text">%</span>
+                <button type="button" class="btn btn-outline-danger" (click)="removeCommission(i)" [disabled]="commissionRates.length === 1">Remover</button>
+              </div>
             </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" (click)="addCommission()">Adicionar comissão</button>
           </div>
           <div class="col-md-4 mb-3">
             <label class="form-label fw-bold">Senha</label>

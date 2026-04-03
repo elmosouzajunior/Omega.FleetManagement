@@ -12,7 +12,7 @@ namespace Omega.FleetManagement.Domain.Services
             _driverRepository = driverRepository;
         }
 
-        public async Task<Driver> CreateDriverAsync(Guid companyId, string name, string cpf, decimal commissionRate, Guid userId)
+        public async Task<Driver> CreateDriverAsync(Guid companyId, string name, string cpf, IEnumerable<decimal> commissionRates, Guid userId)
         {
             // 1. Regra: Motorista não pode ser cadastrado mais de uma vez (validação por CPF)
             var driverExists = await _driverRepository.ExistsByCpfAndCompanyIdAsync(cpf, companyId);
@@ -22,7 +22,7 @@ namespace Omega.FleetManagement.Domain.Services
             }
                         
             // 2. Cria a instância da entidade Driver
-            var driver = new Driver(companyId, userId, name, cpf, commissionRate);
+            var driver = new Driver(companyId, userId, name, cpf, commissionRates);
 
             return driver;
         }

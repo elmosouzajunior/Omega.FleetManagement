@@ -38,6 +38,9 @@ export class TripDetailComponent implements OnInit {
   expenseTypes: any[] = [];
   availableVehicles: any[] = [];
   selectedOpeningDriverDisplay = '';
+  openingLoadedWeightDisplay = '';
+  finishUnloadedWeightDisplay = '';
+  finishFreightValueDisplay = '';
   expenseToEdit: {
     id: string;
     expenseTypeId: string;
@@ -50,6 +53,8 @@ export class TripDetailComponent implements OnInit {
     unloadingDate: '',
     unloadingLocation: '',
     finishKm: null as number | null,
+    unloadedWeightTons: null as number | null,
+    freightValue: 0,
     dieselKmPerLiter: null as number | null,
     arlaKmPerLiter: null as number | null
   };
@@ -141,6 +146,7 @@ export class TripDetailComponent implements OnInit {
       loadedWeightTons: Number(this.trip?.loadedWeightTons || 0),
       freightValue: Number(this.trip?.freightValue || 0)
     };
+    this.openingLoadedWeightDisplay = this.formatDecimalInput(this.trip?.loadedWeightTons);
 
     this.vehicleService.getVehicles().subscribe({
       next: (res: any) => {
@@ -166,6 +172,7 @@ export class TripDetailComponent implements OnInit {
     this.openingEditError = '';
     this.availableVehicles = [];
     this.selectedOpeningDriverDisplay = '';
+    this.openingLoadedWeightDisplay = '';
     this.cdr.detectChanges();
   }
 
@@ -321,9 +328,13 @@ export class TripDetailComponent implements OnInit {
       unloadingDate: this.nowLocalDate(),
       unloadingLocation: this.trip?.unloadingLocation || '',
       finishKm: this.trip?.startKm || null,
+      unloadedWeightTons: Number(this.trip?.unloadedWeightTons ?? this.trip?.loadedWeightTons ?? 0),
+      freightValue: Number(this.trip?.freightValue || 0),
       dieselKmPerLiter: this.trip?.dieselKmPerLiter ?? null,
       arlaKmPerLiter: this.trip?.arlaKmPerLiter ?? null
     };
+    this.finishUnloadedWeightDisplay = this.formatDecimalInput(this.finishForm.unloadedWeightTons);
+    this.syncFinishFreightValue();
 
     this.recalculateFinishConsumption();
     this.showFinishModal = true;
@@ -334,6 +345,8 @@ export class TripDetailComponent implements OnInit {
     if (this.savingFinish) return;
     this.showFinishModal = false;
     this.finishError = '';
+    this.finishUnloadedWeightDisplay = '';
+    this.finishFreightValueDisplay = '';
   }
 
   submitFinish(): void {
@@ -342,9 +355,11 @@ export class TripDetailComponent implements OnInit {
     const unloadingDate = (this.finishForm.unloadingDate || '').trim();
     const unloadingLocation = (this.finishForm.unloadingLocation || '').trim() || (this.trip?.unloadingLocation || '').trim();
     const finishKm = Number(this.finishForm.finishKm);
+    const unloadedWeightTons = Number(this.finishForm.unloadedWeightTons || 0);
+    const freightValue = Number(this.finishForm.freightValue || 0);
 
-    if (!unloadingDate || !finishKm) {
-      this.finishError = 'Preencha data descarregamento e KM final.';
+    if (!unloadingDate || !finishKm || unloadedWeightTons <= 0 || freightValue <= 0) {
+      this.finishError = 'Preencha data descarregamento, KM final, peso descarregamento e frete total.';
       return;
     }
 
@@ -375,6 +390,8 @@ export class TripDetailComponent implements OnInit {
       unloadingDate: finishDate.toISOString(),
       unloadingLocation,
       finishKm,
+      unloadedWeightTons,
+      freightValue,
       dieselKmPerLiter: this.finishForm.dieselKmPerLiter,
       arlaKmPerLiter: this.finishForm.arlaKmPerLiter
     }).pipe(
@@ -464,6 +481,11 @@ export class TripDetailComponent implements OnInit {
     return Number(this.trip?.loadedWeightTons || 0);
   }
 
+  get unloadedWeightTons(): number | null {
+    const unloadedWeight = Number(this.trip?.unloadedWeightTons);
+    return Number.isFinite(unloadedWeight) && unloadedWeight > 0 ? unloadedWeight : null;
+  }
+
   get tripDistanceForFinish(): number {
     const finishKm = Number(this.finishForm.finishKm || 0);
     const startKm = Number(this.trip?.startKm || 0);
@@ -478,6 +500,36 @@ export class TripDetailComponent implements OnInit {
     return normalized.includes('combust') || normalized.includes('diesel') || normalized.includes('arla');
   }
 
+  get finishWeightLossThreshold(): number {
+    return this.loadedWeightTons * (1 - 0.26 / 100);
+  }
+
+  get finishFreightIsEditable(): boolean {
+    const unloadedWeight = Number(this.finishForm.unloadedWeightTons || 0);
+    return unloadedWeight > 0 && unloadedWeight <= this.finishWeightLossThreshold;
+  }
+
+  get finishExpectedFreightValue(): number {
+    const unloadedWeight = Number(this.finishForm.unloadedWeightTons || 0);
+    const baseWeight = this.finishFreightIsEditable ? unloadedWeight : this.loadedWeightTons;
+    return baseWeight > 0
+      ? Number((this.tonValue * baseWeight).toFixed(2))
+      : Number(this.trip?.freightValue || 0);
+  }
+
+  get finishFreightRuleSummary(): string {
+    const thresholdText = this.finishWeightLossThreshold.toLocaleString('pt-BR', {
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3
+    });
+
+    if (this.finishFreightIsEditable) {
+      return `Quebra identificada. Como o peso descarregamento ficou igual ou abaixo de ${thresholdText} T, o frete pode ser recalculado pelo peso descarregado e editado manualmente.`;
+    }
+
+    return `Sem quebra acima do limite de 0,26%. O frete permanece com o valor original da viagem ate o peso descarregamento ficar igual ou abaixo de ${thresholdText} T.`;
+  }
+
   recalculateOpeningFreight(): void {
     const tonValue = Number(this.openingEditForm.tonValue || 0);
     const loadedWeightTons = Number(this.openingEditForm.loadedWeightTons || 0);
@@ -487,7 +539,9 @@ export class TripDetailComponent implements OnInit {
   }
 
   onOpeningLoadedWeightChange(value: string | number): void {
-    this.openingEditForm.loadedWeightTons = this.parseDecimalInput(value);
+    const { displayValue, numericValue } = this.normalizeDecimalInput(value);
+    this.openingLoadedWeightDisplay = displayValue;
+    this.openingEditForm.loadedWeightTons = numericValue;
     this.recalculateOpeningFreight();
   }
 
@@ -597,6 +651,19 @@ export class TripDetailComponent implements OnInit {
     this.recalculateFinishConsumption();
   }
 
+  onFinishUnloadedWeightChange(value: string | number): void {
+    const { displayValue, numericValue } = this.normalizeDecimalInput(value);
+    this.finishUnloadedWeightDisplay = displayValue;
+    this.finishForm.unloadedWeightTons = numericValue;
+    this.syncFinishFreightValue();
+  }
+
+  onFinishFreightValueChange(value: string | number): void {
+    const { displayValue, numericValue } = this.normalizeCurrencyInput(value);
+    this.finishFreightValueDisplay = displayValue;
+    this.finishForm.freightValue = numericValue ?? 0;
+  }
+
   private parseBrazilianDate(value: string): Date | null {
     const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
     if (!match) return null;
@@ -630,20 +697,85 @@ export class TripDetailComponent implements OnInit {
     return parsed.toISOString().slice(0, 10);
   }
 
-  private parseDecimalInput(value: string | number | null | undefined): number | null {
-    if (value === null || value === undefined) return null;
+  private formatDecimalInput(value: string | number | null | undefined): string {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) return '';
 
-    const normalized = value
+    return numericValue.toLocaleString('pt-BR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 3
+    });
+  }
+
+  private formatCurrencyInput(value: string | number | null | undefined): string {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) return '';
+
+    return numericValue.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  private normalizeDecimalInput(value: string | number | null | undefined): { displayValue: string; numericValue: number | null } {
+    if (value === null || value === undefined) {
+      return { displayValue: '', numericValue: null };
+    }
+
+    const sanitized = value
       .toString()
       .trim()
       .replace(/\s/g, '')
       .replace(/\./g, '')
-      .replace(',', '.');
+      .replace(/[^0-9,]/g, '');
 
-    if (!normalized) return null;
+    if (!sanitized) {
+      return { displayValue: '', numericValue: null };
+    }
 
-    const parsed = Number(normalized);
-    return Number.isFinite(parsed) ? parsed : null;
+    const hasComma = sanitized.includes(',');
+    const [rawIntegerPart, ...fractionParts] = sanitized.split(',');
+    const integerPart = (rawIntegerPart || '').replace(/,/g, '') || '0';
+    const fractionPart = fractionParts.join('').slice(0, 3);
+    const displayValue = hasComma
+      ? `${integerPart},${fractionPart}`
+      : integerPart;
+    const numericValue = Number(`${integerPart}${fractionPart ? `.${fractionPart}` : ''}`);
+
+    return {
+      displayValue,
+      numericValue: Number.isFinite(numericValue) ? numericValue : null
+    };
+  }
+
+  private normalizeCurrencyInput(value: string | number | null | undefined): { displayValue: string; numericValue: number | null } {
+    if (value === null || value === undefined) {
+      return { displayValue: '', numericValue: null };
+    }
+
+    const digits = value
+      .toString()
+      .trim()
+      .replace(/\D/g, '');
+
+    if (!digits) {
+      return { displayValue: '', numericValue: null };
+    }
+
+    const numericValue = Number(digits) / 100;
+    return {
+      displayValue: numericValue.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }),
+      numericValue
+    };
+  }
+
+  private syncFinishFreightValue(): void {
+    const freightValue = this.finishExpectedFreightValue;
+    this.finishForm.freightValue = freightValue;
+    this.finishFreightValueDisplay = this.formatCurrencyInput(freightValue);
   }
 
   private getExpenseLitersByType(target: 'diesel' | 'arla'): number {
@@ -680,15 +812,21 @@ export class TripDetailComponent implements OnInit {
           const currentFinishKm = this.finishForm.finishKm;
           const currentUnloadingDate = this.finishForm.unloadingDate;
           const currentUnloadingLocation = this.finishForm.unloadingLocation;
+          const currentUnloadedWeight = this.finishForm.unloadedWeightTons;
+          const currentFreightValue = this.finishForm.freightValue;
 
           this.trip = freshTrip;
           this.finishForm = {
             ...this.finishForm,
             unloadingDate: currentUnloadingDate,
             unloadingLocation: currentUnloadingLocation || freshTrip?.unloadingLocation || '',
-            finishKm: currentFinishKm
+            finishKm: currentFinishKm,
+            unloadedWeightTons: currentUnloadedWeight,
+            freightValue: currentFreightValue
           };
 
+          this.finishUnloadedWeightDisplay = this.formatDecimalInput(currentUnloadedWeight);
+          this.syncFinishFreightValue();
           this.recalculateFinishConsumption();
           this.cdr.detectChanges();
         },

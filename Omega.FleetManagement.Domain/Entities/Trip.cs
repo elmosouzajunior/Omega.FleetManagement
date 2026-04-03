@@ -19,6 +19,7 @@ namespace Omega.FleetManagement.Domain.Entities
         public decimal StartKm { get; private set; }
         public decimal TonValue { get; private set; }
         public decimal LoadedWeightTons { get; private set; }
+        public decimal? UnloadedWeightTons { get; private set; }
         public decimal FinishKm { get; private set; }
         public decimal FreightValue { get; private set; }
         public decimal? DieselKmPerLiter { get; private set; }
@@ -94,7 +95,7 @@ namespace Omega.FleetManagement.Domain.Entities
             CommissionValue = (freightValue * CommissionPercent) / 100;
         }
 
-        public void Finish(string unloadingLocation, DateTime unloadingDate, decimal finishKm, decimal? dieselKmPerLiter, decimal? arlaKmPerLiter)
+        public void Finish(string unloadingLocation, DateTime unloadingDate, decimal finishKm, decimal unloadedWeightTons, decimal freightValue, decimal? dieselKmPerLiter, decimal? arlaKmPerLiter)
         {
             if (Status != TripStatus.Open)
                 throw new ApplicationException("Apenas viagens abertas podem ser finalizadas.");
@@ -105,6 +106,9 @@ namespace Omega.FleetManagement.Domain.Entities
             UnloadingLocation = unloadingLocation;
             UnloadingDate = unloadingDate;
             FinishKm = finishKm;
+            UnloadedWeightTons = unloadedWeightTons;
+            FreightValue = freightValue;
+            CommissionValue = (freightValue * CommissionPercent) / 100;
             DieselKmPerLiter = dieselKmPerLiter;
             ArlaKmPerLiter = arlaKmPerLiter;
             Status = TripStatus.Finished;
@@ -118,6 +122,7 @@ namespace Omega.FleetManagement.Domain.Entities
             Status = TripStatus.Open;
             UnloadingDate = null;
             UnloadingLocation = null;
+            UnloadedWeightTons = null;
             FinishKm = 0;
         }
 
