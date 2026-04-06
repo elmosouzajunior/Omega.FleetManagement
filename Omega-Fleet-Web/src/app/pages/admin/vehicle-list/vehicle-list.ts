@@ -44,7 +44,9 @@ export class VehicleListComponent implements OnInit {
   vehicleExpenseForm = {
     typeId: '',
     description: '',
-    value: null as number | null
+    value: null as number | null,
+    liters: null as number | null,
+    pricePerLiter: null as number | null
   };
 
   ngOnInit() {
@@ -163,7 +165,7 @@ export class VehicleListComponent implements OnInit {
   openVehicleExpenseModal(vehicle: Vehicle) {
     this.vehicleForExpense = vehicle;
     this.vehicleExpenseError = '';
-    this.vehicleExpenseForm = { typeId: '', description: '', value: null };
+    this.vehicleExpenseForm = { typeId: '', description: '', value: null, liters: null, pricePerLiter: null };
     this.showVehicleExpenseModal = true;
 
     if (this.expenseTypes.length === 0) {
@@ -197,8 +199,22 @@ export class VehicleListComponent implements OnInit {
   submitVehicleExpense() {
     if (!this.vehicleForExpense?.id) return;
 
-    if (!this.vehicleExpenseForm.typeId || !this.vehicleExpenseForm.description || !this.vehicleExpenseForm.value || this.vehicleExpenseForm.value <= 0) {
+    const value = this.vehicleExpenseRequiresLiters
+      ? this.vehicleExpenseCalculatedValue
+      : Number(this.vehicleExpenseForm.value || 0);
+
+    if (!this.vehicleExpenseForm.typeId || !this.vehicleExpenseForm.description || !value || value <= 0) {
       this.vehicleExpenseError = 'Preencha os campos obrigatórios com valores válidos.';
+      return;
+    }
+
+    if (this.vehicleExpenseRequiresLiters && (!this.vehicleExpenseForm.liters || this.vehicleExpenseForm.liters <= 0)) {
+      this.vehicleExpenseError = 'Para Combustivel ou Arla, informe os litros.';
+      return;
+    }
+
+    if (this.vehicleExpenseRequiresLiters && (!this.vehicleExpenseForm.pricePerLiter || this.vehicleExpenseForm.pricePerLiter <= 0)) {
+      this.vehicleExpenseError = 'Para Combustivel ou Arla, informe o preco por litro.';
       return;
     }
 
@@ -208,7 +224,9 @@ export class VehicleListComponent implements OnInit {
     const payload = {
       expenseTypeId: this.vehicleExpenseForm.typeId,
       description: this.vehicleExpenseForm.description,
-      value: Number(this.vehicleExpenseForm.value)
+      value: Number(value),
+      liters: this.vehicleExpenseRequiresLiters ? Number(this.vehicleExpenseForm.liters) : null,
+      pricePerLiter: this.vehicleExpenseRequiresLiters ? Number(this.vehicleExpenseForm.pricePerLiter) : null
     };
 
     this.vehicleService.addExpense(this.vehicleForExpense.id, payload).subscribe({
@@ -216,6 +234,7 @@ export class VehicleListComponent implements OnInit {
         this.savingVehicleExpense = false;
         this.showVehicleExpenseModal = false;
         this.vehicleForExpense = null;
+        this.vehicleExpenseForm = { typeId: '', description: '', value: null, liters: null, pricePerLiter: null };
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -234,5 +253,25 @@ export class VehicleListComponent implements OnInit {
     });
     this.filteredVehicles.sort((a, b) => (a.licensePlate || '').localeCompare(b.licensePlate || ''));
     this.cdr.detectChanges();
+  }
+
+  onVehicleExpenseTypeChange(): void {
+    if (!this.vehicleExpenseRequiresLiters) {
+      this.vehicleExpenseForm.liters = null;
+      this.vehicleExpenseForm.pricePerLiter = null;
+    }
+  }
+
+  get vehicleExpenseRequiresLiters(): boolean {
+    const selectedType = this.expenseTypes.find((type: any) => (type.id || type.expenseTypeId) === this.vehicleExpenseForm.typeId);
+    const normalized = ((selectedType?.name || selectedType?.description || '') as string).trim().toLowerCase();
+    return normalized.includes('combust') || normalized.includes('diesel') || normalized.includes('arla');
+  }
+
+  get vehicleExpenseCalculatedValue(): number | null {
+    const liters = Number(this.vehicleExpenseForm.liters || 0);
+    const pricePerLiter = Number(this.vehicleExpenseForm.pricePerLiter || 0);
+    if (liters <= 0 || pricePerLiter <= 0) return null;
+    return Number((liters * pricePerLiter).toFixed(2));
   }
 }

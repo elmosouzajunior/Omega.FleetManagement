@@ -21,6 +21,7 @@ import { TripExpenseCreateComponent } from './pages/admin/trip-expense-create/tr
 import { VehicleExpenseCreateComponent } from './pages/admin/vehicle-expense-create/vehicle-expense-create';
 import { ExpenseTypeListComponent } from './pages/master/expense-type-list/expense-type-list';
 import { ProductListComponent } from './pages/master/product-list/product-list';
+import { ReceiptDocumentTypeListComponent } from './pages/master/receipt-document-type-list/receipt-document-type-list';
 import { ReportCostKmComponent } from './pages/admin/report-cost-km/report-cost-km';
 
 
@@ -36,6 +37,7 @@ const routes: Routes = [
       { path: 'companies/new', component: CompanyCreateComponent },
       { path: 'expense-types', component: ExpenseTypeListComponent },
       { path: 'products', component: ProductListComponent },
+      { path: 'receipt-document-types', component: ReceiptDocumentTypeListComponent },
       { path: 'users', component: UsersListComponent },
       { path: 'users/new', component: UserCreateComponent }
     ]

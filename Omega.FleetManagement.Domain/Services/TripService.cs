@@ -9,13 +9,15 @@ namespace Omega.FleetManagement.Domain.Services
         private readonly IVehicleRepository _vehicleRepository;
         private readonly IDriverRepository _driverRepository;
         private readonly IProductRepository _productRepository;
+        private readonly IReceiptDocumentTypeRepository _receiptDocumentTypeRepository;
 
-        public TripService(ITripRepository tripRepository, IVehicleRepository vehicleRepository, IDriverRepository driverRepository, IProductRepository productRepository)
+        public TripService(ITripRepository tripRepository, IVehicleRepository vehicleRepository, IDriverRepository driverRepository, IProductRepository productRepository, IReceiptDocumentTypeRepository receiptDocumentTypeRepository)
         {
             _tripRepository = tripRepository;
             _vehicleRepository = vehicleRepository;
             _driverRepository = driverRepository;
             _productRepository = productRepository;
+            _receiptDocumentTypeRepository = receiptDocumentTypeRepository;
         }
 
         public async Task<Trip> OpenTripAsync(
@@ -205,7 +207,7 @@ namespace Omega.FleetManagement.Domain.Services
             return trip;
         }
 
-        public async Task<Trip> FinishTripAsync(Guid tripId, Guid companyId, DateTime unloadingDate, string? unloadingLocation, decimal finishKm, decimal unloadedWeightTons, decimal freightValue, decimal? dieselKmPerLiter, decimal? arlaKmPerLiter)
+        public async Task<Trip> FinishTripAsync(Guid tripId, Guid companyId, DateTime unloadingDate, string? unloadingLocation, decimal finishKm, decimal unloadedWeightTons, decimal freightValue, decimal? cargoInsuranceValue, Guid? receiptDocumentTypeId, decimal? dieselKmPerLiter, decimal? arlaKmPerLiter)
         {
             var trip = await _tripRepository.GetByIdAsync(tripId, companyId);
             if (trip == null)
@@ -234,6 +236,18 @@ namespace Omega.FleetManagement.Domain.Services
             if (freightValue <= 0)
                 throw new ArgumentException("Valor do frete deve ser maior que zero.");
 
+            if (cargoInsuranceValue.HasValue && cargoInsuranceValue.Value < 0)
+                throw new ArgumentException("Seguro da carga nao pode ser negativo.");
+
+            if (!receiptDocumentTypeId.HasValue || receiptDocumentTypeId.Value == Guid.Empty)
+                throw new ArgumentException("Tipo de documento do recebimento e obrigatorio.");
+
+            var receiptDocumentType = await _receiptDocumentTypeRepository.GetByIdAsync(receiptDocumentTypeId.Value);
+            if (receiptDocumentType == null || receiptDocumentType.CompanyId != companyId)
+                throw new ArgumentException("Tipo de documento do recebimento invalido para a empresa.");
+            if (!receiptDocumentType.IsActive)
+                throw new ArgumentException("O tipo de documento do recebimento informado esta inativo.");
+
             if (dieselKmPerLiter.HasValue && dieselKmPerLiter.Value <= 0)
                 throw new ArgumentException("Diesel - KM/L deve ser maior que zero.");
 
@@ -253,7 +267,7 @@ namespace Omega.FleetManagement.Domain.Services
             if (!shouldUseUnloadedWeight && Math.Abs(freightValue - expectedFreightValue) > 0.01m)
                 throw new ArgumentException("Valor do frete nao confere com o valor original da viagem.");
 
-            trip.Finish(destination, unloadingDate, finishKm, unloadedWeightTons, freightValue, dieselKmPerLiter, arlaKmPerLiter);
+            trip.Finish(destination, unloadingDate, finishKm, unloadedWeightTons, freightValue, cargoInsuranceValue, receiptDocumentType.Id, receiptDocumentType.Name, dieselKmPerLiter, arlaKmPerLiter);
             return trip;
         }
     }

@@ -11,9 +11,10 @@ public class TripServiceTests
     private readonly Mock<IVehicleRepository> _vehicleRepository = new();
     private readonly Mock<IDriverRepository> _driverRepository = new();
     private readonly Mock<IProductRepository> _productRepository = new();
+    private readonly Mock<IReceiptDocumentTypeRepository> _receiptDocumentTypeRepository = new();
 
     private TripService CreateService() =>
-        new(_tripRepository.Object, _vehicleRepository.Object, _driverRepository.Object, _productRepository.Object);
+        new(_tripRepository.Object, _vehicleRepository.Object, _driverRepository.Object, _productRepository.Object, _receiptDocumentTypeRepository.Object);
 
     [Fact]
     public async Task OpenTripAsync_Throws_WhenVehicleAlreadyHasOpenTrip()
@@ -95,7 +96,7 @@ public class TripServiceTests
         _tripRepository.Setup(x => x.GetByIdAsync(trip.Id, companyId)).ReturnsAsync(trip);
 
         var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.FinishTripAsync(trip.Id, companyId, loadingDate.AddDays(-1), "Destino", 150, 50, 500, null, null));
+            service.FinishTripAsync(trip.Id, companyId, loadingDate.AddDays(-1), "Destino", 150, 50, 500, null, Guid.NewGuid(), null, null));
 
         Assert.Equal("Data de encerramento não pode ser anterior à abertura da viagem.", ex.Message);
     }

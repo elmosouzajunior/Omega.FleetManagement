@@ -34,7 +34,7 @@ namespace Omega.FleetManagement.Domain.Interfaces
             decimal tonValue,
             decimal loadedWeightTons,
             decimal freightValue);
-        Task<Trip> FinishTripAsync(Guid tripId, Guid companyId, DateTime unloadingDate, string? unloadingLocation, decimal finishKm, decimal unloadedWeightTons, decimal freightValue, decimal? dieselKmPerLiter, decimal? arlaKmPerLiter);
+        Task<Trip> FinishTripAsync(Guid tripId, Guid companyId, DateTime unloadingDate, string? unloadingLocation, decimal finishKm, decimal unloadedWeightTons, decimal freightValue, decimal? cargoInsuranceValue, Guid? receiptDocumentTypeId, decimal? dieselKmPerLiter, decimal? arlaKmPerLiter);
         Task<Trip> ReopenTripAsync(Guid tripId, Guid companyId);
         Task<Trip> CancelTripAsync(Guid tripId, Guid companyId);
     }

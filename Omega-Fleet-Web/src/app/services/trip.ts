@@ -14,6 +14,7 @@ export class TripService {
   private readonly apiUrl = `${environment.apiBaseUrl}/trips`; 
   private readonly expenseTypesUrl = `${environment.apiBaseUrl}/expense-types`;
   private readonly productsUrl = `${environment.apiBaseUrl}/products`;
+  private readonly receiptDocumentTypesUrl = `${environment.apiBaseUrl}/receipt-document-types`;
 
   private getHeaders() {
     const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
@@ -46,7 +47,17 @@ export class TripService {
     return this.http.put<any>(`${this.apiUrl}/${id}/opening`, payload, { headers: this.getHeaders() });
   }
 
-  finishTrip(id: string, finishData: { unloadingDate: string, finishKm: number, unloadingLocation: string, unloadedWeightTons: number, freightValue: number, dieselKmPerLiter?: number | null, arlaKmPerLiter?: number | null }): Observable<any> {
+  finishTrip(id: string, finishData: {
+    unloadingDate: string,
+    finishKm: number,
+    unloadingLocation: string,
+    unloadedWeightTons: number,
+    freightValue: number,
+    cargoInsuranceValue?: number | null,
+    receiptDocumentTypeId?: string | null,
+    dieselKmPerLiter?: number | null,
+    arlaKmPerLiter?: number | null
+  }): Observable<any> {
     // Faltava o { headers } aqui
     return this.http.patch<any>(`${this.apiUrl}/${id}/finish`, finishData, { headers: this.getHeaders() });
   }
@@ -77,6 +88,10 @@ export class TripService {
 
   getProducts(): Observable<any> {
     return this.http.get<any>(this.productsUrl, { headers: this.getHeaders() });
+  }
+
+  getReceiptDocumentTypes(): Observable<any> {
+    return this.http.get<any>(this.receiptDocumentTypesUrl, { headers: this.getHeaders() });
   }
 
   private serializeFormDataValue(value: unknown): string | Blob {

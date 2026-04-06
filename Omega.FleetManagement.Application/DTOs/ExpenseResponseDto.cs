@@ -7,6 +7,7 @@
         public string? Description { get; set; }
         public decimal Value { get; set; }
         public decimal? Liters { get; set; }
+        public decimal? PricePerLiter { get; set; }
         public Guid ExpenseTypeId { get; set; }
         public string? ExpenseTypeName { get; set; }
     }

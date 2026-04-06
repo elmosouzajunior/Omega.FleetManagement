@@ -30,6 +30,7 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
         {
             return await _context.Trips
                 .Include(t => t.Product)
+                .Include(t => t.ReceiptDocumentType)
                 .Include(t => t.Driver)
                 .Include(t => t.Vehicle)
                 .Include(t => t.Expenses)
@@ -41,6 +42,7 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
         {
             return await _context.Trips
                 .Include(t => t.Product)
+                .Include(t => t.ReceiptDocumentType)
                 .Include(t => t.Driver)
                 .Include(t => t.Vehicle)
                 .Where(t => t.CompanyId == companyId)                

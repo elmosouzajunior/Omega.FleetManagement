@@ -41,6 +41,11 @@ public class TripMapping : IEntityTypeConfiguration<Trip>
             .HasColumnName("FreightValue")
             .HasColumnType("numeric(18,2)");
 
+        builder.Property(t => t.CargoInsuranceValue)
+            .HasColumnName("CargoInsuranceValue")
+            .HasColumnType("numeric(18,2)")
+            .IsRequired(false);
+
         builder.Property(t => t.DieselKmPerLiter)
             .HasColumnName("DieselKmPerLiter")
             .HasColumnType("numeric(18,2)")
@@ -66,6 +71,10 @@ public class TripMapping : IEntityTypeConfiguration<Trip>
         builder.Property(t => t.ClientName)
             .HasColumnName("ClientName")
             .HasMaxLength(150);
+
+        builder.Property(t => t.ReceiptDocumentTypeName)
+            .HasColumnName("ReceiptDocumentTypeName")
+            .HasMaxLength(120);
 
         builder.Property(t => t.LoadingLocation)
             .HasColumnName("LoadingLocation")
@@ -100,6 +109,11 @@ public class TripMapping : IEntityTypeConfiguration<Trip>
             .HasForeignKey(t => t.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(t => t.ReceiptDocumentType)
+            .WithMany(r => r.Trips)
+            .HasForeignKey(t => t.ReceiptDocumentTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(t => t.Driver)      // Usa a propriedade de navegação física
             .WithMany()                    // Se o Driver não tiver ICollection<Trip>
             .HasForeignKey(t => t.DriverId)
@@ -117,6 +131,7 @@ public class TripMapping : IEntityTypeConfiguration<Trip>
 
         // --- ÍNDICES ---
         builder.HasIndex(t => t.ProductId);
+        builder.HasIndex(t => t.ReceiptDocumentTypeId);
         builder.HasIndex(t => t.DriverId);
         builder.HasIndex(t => t.VehicleId);
         builder.HasIndex(t => t.Status);

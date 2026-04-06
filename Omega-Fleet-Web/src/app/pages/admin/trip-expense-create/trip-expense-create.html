@@ -45,20 +45,6 @@
             />
           </div>
 
-          <div class="form-group">
-            <label>{{ requiresLiters ? 'Valor Total (R$) *' : 'Valor (R$) *' }}</label>
-            <input
-              class="modern-select"
-              type="text"
-              name="valueDisplay"
-              [value]="valueDisplay"
-              (input)="onValueInput($event)"
-              inputmode="decimal"
-              placeholder="0,00"
-              [disabled]="saving"
-            />
-          </div>
-
           <div class="form-group" *ngIf="requiresLiters">
             <label>Litros *</label>
             <input
@@ -68,6 +54,34 @@
               step="0.01"
               [(ngModel)]="form.liters"
               name="liters"
+              [disabled]="saving"
+            />
+          </div>
+
+          <div class="form-group" *ngIf="requiresLiters">
+            <label>Preco/Litro *</label>
+            <input
+              class="modern-select"
+              type="number"
+              min="0.0001"
+              step="0.0001"
+              [(ngModel)]="form.pricePerLiter"
+              name="pricePerLiter"
+              [disabled]="saving"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>{{ requiresLiters ? 'Valor Total (R$) *' : 'Valor (R$) *' }}</label>
+            <input
+              class="modern-select"
+              [type]="requiresLiters ? 'text' : 'text'"
+              [name]="requiresLiters ? 'calculatedValue' : 'valueDisplay'"
+              [value]="requiresLiters ? (calculatedFuelValue === null ? '' : calculatedFuelValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : valueDisplay"
+              (input)="!requiresLiters && onValueInput($event)"
+              inputmode="decimal"
+              placeholder="0,00"
+              [readonly]="requiresLiters"
               [disabled]="saving"
             />
           </div>

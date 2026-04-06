@@ -113,19 +113,22 @@ namespace Omega.FleetManagement.Application.Services
             if (expenseType == null || expenseType.CompanyId != companyId)
                 throw new ArgumentException("Tipo de despesa inválido para a empresa.");
 
+            var isFuelOrArla = IsFuelOrArlaExpense(expenseType.Name);
             var expense = new Domain.Entities.Expense(
                 companyId: companyId,
                 expenseTypeId: request.ExpenseTypeId,
                 description: request.Description,
-                value: request.Value,
+                value: ResolveExpenseValue(request.Value, request.Liters, request.PricePerLiter, isFuelOrArla),
                 date: request.ExpenseDate?.ToUniversalTime() ?? DateTime.UtcNow,
                 vehicleId: vehicleId);
 
-            var isFuelOrArla = IsFuelOrArlaExpense(expenseType.Name);
             if (isFuelOrArla && (!request.Liters.HasValue || request.Liters.Value <= 0))
                 throw new ArgumentException("Para Combustível ou Arla, informe os litros.");
+            if (isFuelOrArla && (!request.PricePerLiter.HasValue || request.PricePerLiter.Value <= 0))
+                throw new ArgumentException("Para Combustível ou Arla, informe o preco por litro.");
 
             expense.SetLiters(isFuelOrArla ? request.Liters : null);
+            expense.SetPricePerLiter(isFuelOrArla ? request.PricePerLiter : null);
 
             await _expenseRepository.AddAsync(expense);
             await _uow.CommitAsync();
@@ -135,6 +138,20 @@ namespace Omega.FleetManagement.Application.Services
         {
             var normalized = (expenseTypeName ?? string.Empty).Trim().ToLowerInvariant();
             return normalized.Contains("combust") || normalized.Contains("diesel") || normalized.Contains("arla");
+        }
+
+        private static decimal ResolveExpenseValue(decimal informedValue, decimal? liters, decimal? pricePerLiter, bool isFuelOrArla)
+        {
+            if (!isFuelOrArla)
+                return informedValue;
+
+            if (!liters.HasValue || liters.Value <= 0)
+                throw new ArgumentException("Para Combustível ou Arla, informe os litros.");
+
+            if (!pricePerLiter.HasValue || pricePerLiter.Value <= 0)
+                throw new ArgumentException("Para Combustível ou Arla, informe o preco por litro.");
+
+            return decimal.Round(liters.Value * pricePerLiter.Value, 2, MidpointRounding.AwayFromZero);
         }
     }
 }

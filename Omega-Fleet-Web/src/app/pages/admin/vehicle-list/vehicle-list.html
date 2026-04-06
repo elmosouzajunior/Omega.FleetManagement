@@ -164,7 +164,7 @@
 
       <div class="form-group">
         <label>Tipo de despesa *</label>
-        <select [(ngModel)]="vehicleExpenseForm.typeId" class="modern-select">
+        <select [(ngModel)]="vehicleExpenseForm.typeId" (ngModelChange)="onVehicleExpenseTypeChange()" class="modern-select">
           <option value="">Selecione...</option>
           <option *ngFor="let type of expenseTypes" [value]="type.id || type.expenseTypeId">{{ type.name || type.description }}</option>
         </select>
@@ -175,9 +175,26 @@
         <input type="text" [(ngModel)]="vehicleExpenseForm.description" class="modern-select" placeholder="Ex: lavagem, manutencao, borracharia..." />
       </div>
 
+      <div class="form-group" *ngIf="vehicleExpenseRequiresLiters">
+        <label>Litros *</label>
+        <input type="number" min="0.01" step="0.01" [(ngModel)]="vehicleExpenseForm.liters" class="modern-select" />
+      </div>
+
+      <div class="form-group" *ngIf="vehicleExpenseRequiresLiters">
+        <label>Preco/Litro *</label>
+        <input type="number" min="0.0001" step="0.0001" [(ngModel)]="vehicleExpenseForm.pricePerLiter" class="modern-select" />
+      </div>
+
       <div class="form-group">
-        <label>Valor (R$) *</label>
-        <input type="number" min="0.01" step="0.01" [(ngModel)]="vehicleExpenseForm.value" class="modern-select" />
+        <label>{{ vehicleExpenseRequiresLiters ? 'Valor Total (R$) *' : 'Valor (R$) *' }}</label>
+        <input
+          [type]="vehicleExpenseRequiresLiters ? 'text' : 'number'"
+          [min]="vehicleExpenseRequiresLiters ? null : '0.01'"
+          [step]="vehicleExpenseRequiresLiters ? null : '0.01'"
+          [ngModel]="vehicleExpenseRequiresLiters ? (vehicleExpenseCalculatedValue === null ? '' : vehicleExpenseCalculatedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : vehicleExpenseForm.value"
+          (ngModelChange)="!vehicleExpenseRequiresLiters && (vehicleExpenseForm.value = $event)"
+          [readonly]="vehicleExpenseRequiresLiters"
+          class="modern-select" />
       </div>
 
       <p class="error-msg" *ngIf="vehicleExpenseError">&#9888; {{ vehicleExpenseError }}</p>

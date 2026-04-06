@@ -47,6 +47,10 @@
         <strong class="negative">{{ totalExpenses | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
       </article>
       <article class="stat-card">
+        <span class="label">Seguro da Carga</span>
+        <strong class="negative">{{ cargoInsuranceValue | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+      </article>
+      <article class="stat-card">
         <span class="label">Resultado Liquido</span>
         <strong [class.negative]="netFreight < 0">{{ netFreight | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
       </article>
@@ -128,6 +132,14 @@
             <span>Arla - KM/L</span>
             <strong>{{ trip.arlaKmPerLiter ? (trip.arlaKmPerLiter | number:'1.2-2') : '-' }}</strong>
           </div>
+          <div class="line-item">
+            <span>Seguro da carga</span>
+            <strong>{{ trip.cargoInsuranceValue ? (trip.cargoInsuranceValue | currency:'BRL':'symbol':'1.2-2':'pt-BR') : '-' }}</strong>
+          </div>
+          <div class="line-item">
+            <span>Documento do recebimento</span>
+            <strong>{{ trip.receiptDocumentTypeName || '-' }}</strong>
+          </div>
         </div>
         <ng-template #openTripState>
           <p class="open-state">A viagem esta em andamento. Finalize quando chegar ao destino.</p>
@@ -151,18 +163,20 @@
             <th>Tipo</th>
             <th>Descricao</th>
             <th>Litros</th>
+            <th>Preco/L</th>
             <th style="text-align:right;">Valor</th>
             <th style="text-align:right;">A&Ccedil;&Otilde;ES</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let expense of expenses">
-            <td>{{ expense.expenseTypeName || expense.type || '-' }}</td>
-            <td>{{ expense.description || '-' }}</td>
-            <td>{{ expense.liters ? (expense.liters | number:'1.2-2') : '-' }}</td>
-            <td class="value">{{ expense.value | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
-            <td style="text-align:right;">
-              <button class="btn-icon" type="button" title="Editar despesa" (click)="openEditExpenseModal(expense)">✏️</button>
+            <tr *ngFor="let expense of expenses">
+              <td>{{ expense.expenseTypeName || expense.type || '-' }}</td>
+              <td>{{ expense.description || '-' }}</td>
+              <td>{{ expense.liters ? (expense.liters | number:'1.2-2') : '-' }}</td>
+              <td>{{ expense.pricePerLiter ? (expense.pricePerLiter | currency:'BRL':'symbol':'1.2-4':'pt-BR') : '-' }}</td>
+              <td class="value">{{ expense.value | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+              <td style="text-align:right;">
+                <button class="btn-icon" type="button" title="Editar despesa" (click)="openEditExpenseModal(expense)">✏️</button>
             </td>
           </tr>
         </tbody>
@@ -259,68 +273,103 @@
 </div>
 
 <div class="modal-overlay" *ngIf="showFinishModal" (click)="$event.target === $event.currentTarget && closeFinishModal()">
-  <div class="modal-card">
+  <div class="modal-card modal-card-finish">
     <header class="modal-header">
-      <h3>Finalizar Viagem</h3>
+      <div>
+        <h3>Finalizar Viagem</h3>
+        <p class="modal-subtitle">Revise os dados finais da rota, custos e documento de recebimento.</p>
+      </div>
       <button type="button" class="btn-close" (click)="closeFinishModal()">x</button>
     </header>
 
     <div class="modal-body">
-      <div class="form-group">
-        <label>Data Descarregamento *</label>
-        <input
-          type="text"
-          [(ngModel)]="finishForm.unloadingDate"
-          (input)="onUnloadingDateInput($event)"
-          [disabled]="savingFinish"
-          maxlength="10"
-          placeholder="DD/MM/AAAA" />
-      </div>
+      <section class="finish-section">
+        <div class="section-title">Encerramento</div>
+        <div class="finish-form-grid">
+          <div class="form-group">
+            <label>Data Descarregamento *</label>
+            <input
+              type="text"
+              [(ngModel)]="finishForm.unloadingDate"
+              (input)="onUnloadingDateInput($event)"
+              [disabled]="savingFinish"
+              maxlength="10"
+              placeholder="DD/MM/AAAA" />
+          </div>
 
-      <div class="form-group">
-        <label>Local de descarga</label>
-        <input type="text" [(ngModel)]="finishForm.unloadingLocation" [disabled]="savingFinish" placeholder="Ex: CD Guarulhos - Docas 3" />
-      </div>
+          <div class="form-group">
+            <label>KM final *</label>
+            <input type="number" min="0" [(ngModel)]="finishForm.finishKm" (ngModelChange)="onFinishKmInput()" [disabled]="savingFinish" />
+          </div>
 
-      <div class="form-group">
-        <label>KM final *</label>
-        <input type="number" min="0" [(ngModel)]="finishForm.finishKm" (ngModelChange)="onFinishKmInput()" [disabled]="savingFinish" />
-      </div>
+          <div class="form-group finish-field-full">
+            <label>Local de descarga</label>
+            <input type="text" [(ngModel)]="finishForm.unloadingLocation" [disabled]="savingFinish" placeholder="Ex: CD Guarulhos - Docas 3" />
+          </div>
 
-      <div class="form-group">
-        <label>Peso descarregamento (T) *</label>
-        <input
-          type="text"
-          inputmode="decimal"
-          [ngModel]="finishUnloadedWeightDisplay"
-          (ngModelChange)="onFinishUnloadedWeightChange($event)"
-          [disabled]="savingFinish"
-          placeholder="0,000" />
-      </div>
+          <div class="form-group">
+            <label>Peso descarregamento (T) *</label>
+            <input
+              type="text"
+              inputmode="decimal"
+              [ngModel]="finishUnloadedWeightDisplay"
+              (ngModelChange)="onFinishUnloadedWeightChange($event)"
+              [disabled]="savingFinish"
+              placeholder="0,000" />
+          </div>
 
-      <div class="form-group">
-        <label>Valor total do frete *</label>
-        <input
-          type="text"
-          inputmode="decimal"
-          [ngModel]="finishFreightValueDisplay"
-          (ngModelChange)="onFinishFreightValueChange($event)"
-          [disabled]="savingFinish || !finishFreightIsEditable"
-          placeholder="0,00" />
-      </div>
+          <div class="form-group">
+            <label>Valor total do frete *</label>
+            <input
+              type="text"
+              inputmode="decimal"
+              [ngModel]="finishFreightValueDisplay"
+              (ngModelChange)="onFinishFreightValueChange($event)"
+              [disabled]="savingFinish || !finishFreightIsEditable"
+              placeholder="0,00" />
+          </div>
+        </div>
+      </section>
 
-      <div class="form-group">
-        <label>Diesel - KM/L</label>
-        <input type="number" min="0.01" step="0.01" [(ngModel)]="finishForm.dieselKmPerLiter" [disabled]="savingFinish" readonly />
-      </div>
+      <section class="finish-section">
+        <div class="section-title">Recebimento</div>
+        <div class="finish-form-grid">
+          <div class="form-group">
+            <label>Seguro da carga</label>
+            <input type="number" min="0" step="0.01" [(ngModel)]="finishForm.cargoInsuranceValue" [disabled]="savingFinish" />
+          </div>
 
-      <div class="form-group">
-        <label>Arla - KM/L</label>
-        <input type="number" min="0.01" step="0.01" [(ngModel)]="finishForm.arlaKmPerLiter" [disabled]="savingFinish" readonly />
-      </div>
+          <div class="form-group">
+            <label>Tipo de documento do recebimento *</label>
+            <select [(ngModel)]="finishForm.receiptDocumentTypeId" [disabled]="savingFinish || loadingReceiptDocumentTypes">
+              <option value="">Selecione...</option>
+              <option *ngFor="let item of receiptDocumentTypes" [value]="item.id || item.Id">
+                {{ item.name || item.Name }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </section>
 
-      <p class="helper-text">{{ finishConsumptionSummary }}</p>
-      <p class="helper-text">{{ finishFreightRuleSummary }}</p>
+      <section class="finish-section finish-section-soft">
+        <div class="section-title">Consumo</div>
+        <div class="finish-form-grid">
+          <div class="form-group">
+            <label>Diesel - KM/L</label>
+            <input type="number" min="0.01" step="0.01" [(ngModel)]="finishForm.dieselKmPerLiter" [disabled]="savingFinish" readonly />
+          </div>
+
+          <div class="form-group">
+            <label>Arla - KM/L</label>
+            <input type="number" min="0.01" step="0.01" [(ngModel)]="finishForm.arlaKmPerLiter" [disabled]="savingFinish" readonly />
+          </div>
+        </div>
+      </section>
+
+      <div class="helper-stack">
+        <p class="helper-text">{{ finishConsumptionSummary }}</p>
+        <p class="helper-text">{{ finishFreightRuleSummary }}</p>
+      </div>
       <p *ngIf="finishError" class="error-msg">{{ finishError }}</p>
     </div>
 
@@ -356,14 +405,26 @@
         <input type="text" [(ngModel)]="expenseToEdit.description" [disabled]="savingExpenseEdit" />
       </div>
 
-      <div class="form-group">
-        <label>{{ expenseEditRequiresLiters ? 'Valor Total (R$) *' : 'Valor (R$) *' }}</label>
-        <input type="number" min="0.01" step="0.01" [(ngModel)]="expenseToEdit.value" [disabled]="savingExpenseEdit" />
-      </div>
-
       <div class="form-group" *ngIf="expenseEditRequiresLiters">
         <label>Litros *</label>
         <input type="number" min="0.01" step="0.01" [(ngModel)]="expenseToEdit.liters" [disabled]="savingExpenseEdit" />
+      </div>
+
+      <div class="form-group" *ngIf="expenseEditRequiresLiters">
+        <label>Preco/Litro *</label>
+        <input type="number" min="0.0001" step="0.0001" [(ngModel)]="expenseToEdit.pricePerLiter" [disabled]="savingExpenseEdit" />
+      </div>
+
+      <div class="form-group">
+        <label>{{ expenseEditRequiresLiters ? 'Valor Total (R$) *' : 'Valor (R$) *' }}</label>
+        <input
+          [type]="expenseEditRequiresLiters ? 'text' : 'number'"
+          [min]="expenseEditRequiresLiters ? null : '0.01'"
+          [step]="expenseEditRequiresLiters ? null : '0.01'"
+          [ngModel]="expenseEditRequiresLiters ? (expenseEditCalculatedValue === null ? '' : expenseEditCalculatedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : expenseToEdit.value"
+          (ngModelChange)="!expenseEditRequiresLiters && (expenseToEdit.value = $event)"
+          [readonly]="expenseEditRequiresLiters"
+          [disabled]="savingExpenseEdit" />
       </div>
 
       <p *ngIf="expenseEditError" class="error-msg">{{ expenseEditError }}</p>

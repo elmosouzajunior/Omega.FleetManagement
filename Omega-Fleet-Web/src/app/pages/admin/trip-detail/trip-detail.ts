@@ -30,6 +30,7 @@ export class TripDetailComponent implements OnInit {
   savingOpeningEdit = false;
   loadingVehicles = false;
   loadingProducts = false;
+  loadingReceiptDocumentTypes = false;
   finishError = '';
   openingEditError = '';
   showEditExpenseModal = false;
@@ -38,6 +39,7 @@ export class TripDetailComponent implements OnInit {
   expenseEditError = '';
   expenseTypes: any[] = [];
   products: any[] = [];
+  receiptDocumentTypes: any[] = [];
   availableVehicles: any[] = [];
   selectedOpeningDriverDisplay = '';
   openingLoadedWeightDisplay = '';
@@ -49,6 +51,7 @@ export class TripDetailComponent implements OnInit {
     description: string;
     value: number | null;
     liters: number | null;
+    pricePerLiter: number | null;
   } | null = null;
 
   finishForm = {
@@ -57,6 +60,8 @@ export class TripDetailComponent implements OnInit {
     finishKm: null as number | null,
     unloadedWeightTons: null as number | null,
     freightValue: 0,
+    cargoInsuranceValue: null as number | null,
+    receiptDocumentTypeId: '',
     dieselKmPerLiter: null as number | null,
     arlaKmPerLiter: null as number | null
   };
@@ -269,7 +274,8 @@ export class TripDetailComponent implements OnInit {
       expenseTypeId: expense?.expenseTypeId || expense?.ExpenseTypeId || '',
       description: expense?.description || expense?.Description || '',
       value: Number(expense?.value || expense?.Value || 0),
-      liters: expense?.liters ?? expense?.Liters ?? null
+      liters: expense?.liters ?? expense?.Liters ?? null,
+      pricePerLiter: expense?.pricePerLiter ?? expense?.PricePerLiter ?? null
     };
     this.showEditExpenseModal = true;
 
@@ -302,10 +308,15 @@ export class TripDetailComponent implements OnInit {
     if (!this.trip?.id || !this.expenseToEdit) return;
 
     const description = (this.expenseToEdit.description || '').trim();
-    const value = Number(this.expenseToEdit.value);
+    const value = this.expenseEditRequiresLiters
+      ? Number(this.expenseEditCalculatedValue || 0)
+      : Number(this.expenseToEdit.value);
     const liters = this.expenseToEdit.liters === null || this.expenseToEdit.liters === undefined
       ? null
       : Number(this.expenseToEdit.liters);
+    const pricePerLiter = this.expenseToEdit.pricePerLiter === null || this.expenseToEdit.pricePerLiter === undefined
+      ? null
+      : Number(this.expenseToEdit.pricePerLiter);
     const expenseTypeId = this.expenseToEdit.expenseTypeId;
 
     if (!expenseTypeId || !description || !value || value <= 0) {
@@ -320,6 +331,12 @@ export class TripDetailComponent implements OnInit {
       return;
     }
 
+    if (this.expenseEditRequiresLiters && (!pricePerLiter || pricePerLiter <= 0)) {
+      this.expenseEditError = 'Para Combustivel ou Arla, informe o preco por litro.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.savingExpenseEdit = true;
     this.expenseEditError = '';
 
@@ -327,7 +344,8 @@ export class TripDetailComponent implements OnInit {
       expenseTypeId,
       description,
       value,
-      liters: this.expenseEditRequiresLiters ? liters : null
+      liters: this.expenseEditRequiresLiters ? liters : null,
+      pricePerLiter: this.expenseEditRequiresLiters ? pricePerLiter : null
     }).subscribe({
       next: () => {
         this.savingExpenseEdit = false;
@@ -352,6 +370,8 @@ export class TripDetailComponent implements OnInit {
       finishKm: this.trip?.startKm || null,
       unloadedWeightTons: Number(this.trip?.unloadedWeightTons ?? this.trip?.loadedWeightTons ?? 0),
       freightValue: Number(this.trip?.freightValue || 0),
+      cargoInsuranceValue: this.trip?.cargoInsuranceValue ?? null,
+      receiptDocumentTypeId: this.trip?.receiptDocumentTypeId || '',
       dieselKmPerLiter: this.trip?.dieselKmPerLiter ?? null,
       arlaKmPerLiter: this.trip?.arlaKmPerLiter ?? null
     };
@@ -360,6 +380,7 @@ export class TripDetailComponent implements OnInit {
 
     this.recalculateFinishConsumption();
     this.showFinishModal = true;
+    this.loadReceiptDocumentTypes();
     this.refreshFinishContext();
   }
 
@@ -379,9 +400,23 @@ export class TripDetailComponent implements OnInit {
     const finishKm = Number(this.finishForm.finishKm);
     const unloadedWeightTons = Number(this.finishForm.unloadedWeightTons || 0);
     const freightValue = Number(this.finishForm.freightValue || 0);
+    const cargoInsuranceValue = this.finishForm.cargoInsuranceValue === null || this.finishForm.cargoInsuranceValue === undefined
+      ? null
+      : Number(this.finishForm.cargoInsuranceValue);
+    const receiptDocumentTypeId = (this.finishForm.receiptDocumentTypeId || '').trim();
 
     if (!unloadingDate || !finishKm || unloadedWeightTons <= 0 || freightValue <= 0) {
       this.finishError = 'Preencha data descarregamento, KM final, peso descarregamento e frete total.';
+      return;
+    }
+
+    if (!receiptDocumentTypeId) {
+      this.finishError = 'Selecione o tipo de documento do recebimento.';
+      return;
+    }
+
+    if (cargoInsuranceValue !== null && cargoInsuranceValue < 0) {
+      this.finishError = 'O seguro da carga nao pode ser negativo.';
       return;
     }
 
@@ -414,6 +449,8 @@ export class TripDetailComponent implements OnInit {
       finishKm,
       unloadedWeightTons,
       freightValue,
+      cargoInsuranceValue,
+      receiptDocumentTypeId,
       dieselKmPerLiter: this.finishForm.dieselKmPerLiter,
       arlaKmPerLiter: this.finishForm.arlaKmPerLiter
     }).pipe(
@@ -491,8 +528,12 @@ export class TripDetailComponent implements OnInit {
     return (freightValue * commissionPercent) / 100;
   }
 
+  get cargoInsuranceValue(): number {
+    return Number(this.trip?.cargoInsuranceValue || 0);
+  }
+
   get netFreight(): number {
-    return Number(this.trip?.freightValue || 0) - this.totalExpenses - this.commissionValue;
+    return Number(this.trip?.freightValue || 0) - this.totalExpenses - this.commissionValue - this.cargoInsuranceValue;
   }
 
   get tonValue(): number {
@@ -520,6 +561,16 @@ export class TripDetailComponent implements OnInit {
     const selectedType = this.expenseTypes.find((type: any) => (type.id || type.expenseTypeId) === this.expenseToEdit?.expenseTypeId);
     const normalized = ((selectedType?.name || selectedType?.description || '') as string).trim().toLowerCase();
     return normalized.includes('combust') || normalized.includes('diesel') || normalized.includes('arla');
+  }
+
+  get expenseEditCalculatedValue(): number | null {
+    if (!this.expenseEditRequiresLiters || !this.expenseToEdit) return this.expenseToEdit?.value ?? null;
+
+    const liters = Number(this.expenseToEdit.liters || 0);
+    const pricePerLiter = Number(this.expenseToEdit.pricePerLiter || 0);
+    if (liters <= 0 || pricePerLiter <= 0) return null;
+
+    return Number((liters * pricePerLiter).toFixed(2));
   }
 
   get finishWeightLossThreshold(): number {
@@ -686,6 +737,26 @@ export class TripDetailComponent implements OnInit {
     this.finishForm.freightValue = numericValue ?? 0;
   }
 
+  private loadReceiptDocumentTypes(): void {
+    this.loadingReceiptDocumentTypes = true;
+
+    this.tripService.getReceiptDocumentTypes().subscribe({
+      next: (res: any) => {
+        const data = res?.data || res?.$values || (Array.isArray(res) ? res : []);
+        this.receiptDocumentTypes = (data || []).filter((item: any) =>
+          (item?.isActive ?? item?.IsActive ?? true) || (item.id || item.Id) === this.finishForm.receiptDocumentTypeId
+        );
+        this.loadingReceiptDocumentTypes = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadingReceiptDocumentTypes = false;
+        this.finishError = 'Nao foi possivel carregar os tipos de documento do recebimento.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   private parseBrazilianDate(value: string): Date | null {
     const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
     if (!match) return null;
@@ -836,6 +907,8 @@ export class TripDetailComponent implements OnInit {
           const currentUnloadingLocation = this.finishForm.unloadingLocation;
           const currentUnloadedWeight = this.finishForm.unloadedWeightTons;
           const currentFreightValue = this.finishForm.freightValue;
+          const currentCargoInsuranceValue = this.finishForm.cargoInsuranceValue;
+          const currentReceiptDocumentTypeId = this.finishForm.receiptDocumentTypeId;
 
           this.trip = freshTrip;
           this.finishForm = {
@@ -844,7 +917,9 @@ export class TripDetailComponent implements OnInit {
             unloadingLocation: currentUnloadingLocation || freshTrip?.unloadingLocation || '',
             finishKm: currentFinishKm,
             unloadedWeightTons: currentUnloadedWeight,
-            freightValue: currentFreightValue
+            freightValue: currentFreightValue,
+            cargoInsuranceValue: currentCargoInsuranceValue,
+            receiptDocumentTypeId: currentReceiptDocumentTypeId || freshTrip?.receiptDocumentTypeId || ''
           };
 
           this.finishUnloadedWeightDisplay = this.formatDecimalInput(currentUnloadedWeight);

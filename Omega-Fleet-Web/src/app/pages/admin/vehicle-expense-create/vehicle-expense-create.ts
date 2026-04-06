@@ -30,7 +30,8 @@ export class VehicleExpenseCreateComponent implements OnInit {
     expenseTypeId: '',
     description: '',
     value: null as number | null,
-    liters: null as number | null
+    liters: null as number | null,
+    pricePerLiter: null as number | null
   };
 
   ngOnInit(): void {
@@ -84,7 +85,9 @@ export class VehicleExpenseCreateComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
-    if (!this.form.vehicleId || !this.form.expenseTypeId || !this.form.description || !this.form.value || this.form.value <= 0) {
+    const value = this.requiresLiters ? this.calculatedFuelValue : Number(this.form.value);
+
+    if (!this.form.vehicleId || !this.form.expenseTypeId || !this.form.description || !value || value <= 0) {
       this.errorMessage = 'Preencha os campos obrigatorios com valores validos.';
       return;
     }
@@ -94,13 +97,19 @@ export class VehicleExpenseCreateComponent implements OnInit {
       return;
     }
 
+    if (this.requiresLiters && (!this.form.pricePerLiter || this.form.pricePerLiter <= 0)) {
+      this.errorMessage = 'Para Combustivel ou Arla, informe o preco por litro.';
+      return;
+    }
+
     this.saving = true;
 
     const payload = {
       expenseTypeId: this.form.expenseTypeId,
       description: this.form.description,
-      value: Number(this.form.value),
-      liters: this.requiresLiters ? Number(this.form.liters) : null
+      value: Number(value),
+      liters: this.requiresLiters ? Number(this.form.liters) : null,
+      pricePerLiter: this.requiresLiters ? Number(this.form.pricePerLiter) : null
     };
 
     this.vehicleService.addExpense(this.form.vehicleId, payload).subscribe({
@@ -112,7 +121,8 @@ export class VehicleExpenseCreateComponent implements OnInit {
           expenseTypeId: '',
           description: '',
           value: null,
-          liters: null
+          liters: null,
+          pricePerLiter: null
         };
         this.cdr.detectChanges();
       },
@@ -131,6 +141,7 @@ export class VehicleExpenseCreateComponent implements OnInit {
   onExpenseTypeChange(): void {
     if (!this.requiresLiters) {
       this.form.liters = null;
+      this.form.pricePerLiter = null;
     }
   }
 
@@ -138,5 +149,13 @@ export class VehicleExpenseCreateComponent implements OnInit {
     const selectedType = this.expenseTypes.find((type: any) => (type.id || type.expenseTypeId) === this.form.expenseTypeId);
     const normalized = ((selectedType?.name || selectedType?.description || '') as string).trim().toLowerCase();
     return normalized.includes('combust') || normalized.includes('diesel') || normalized.includes('arla');
+  }
+
+  get calculatedFuelValue(): number | null {
+    const liters = Number(this.form.liters || 0);
+    const pricePerLiter = Number(this.form.pricePerLiter || 0);
+
+    if (liters <= 0 || pricePerLiter <= 0) return null;
+    return Number((liters * pricePerLiter).toFixed(2));
   }
 }

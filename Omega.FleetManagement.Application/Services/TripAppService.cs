@@ -11,6 +11,7 @@ namespace Omega.FleetManagement.Application.Services
         private readonly ITripRepository _tripRepository;
         private readonly IExpenseRepository _expenseRepository;
         private readonly IExpenseTypeRepository _expenseTypeRepository;
+        private readonly IReceiptDocumentTypeRepository _receiptDocumentTypeRepository;
         private readonly IFileStorageService _storage;
         private readonly IUnitOfWork _uow;
 
@@ -19,6 +20,7 @@ namespace Omega.FleetManagement.Application.Services
             ITripRepository tripRepository,
             IExpenseRepository expenseRepository,
             IExpenseTypeRepository expenseTypeRepository,
+            IReceiptDocumentTypeRepository receiptDocumentTypeRepository,
             IFileStorageService storage,
             IUnitOfWork uow)
         {
@@ -26,6 +28,7 @@ namespace Omega.FleetManagement.Application.Services
             _tripRepository = tripRepository;
             _expenseRepository = expenseRepository;
             _expenseTypeRepository = expenseTypeRepository;
+            _receiptDocumentTypeRepository = receiptDocumentTypeRepository;
             _storage = storage;
             _uow = uow;
         }
@@ -121,6 +124,9 @@ namespace Omega.FleetManagement.Application.Services
             if (request.ArlaKmPerLiter.HasValue && request.ArlaKmPerLiter.Value <= 0)
                 throw new ArgumentException("Arla - KM/L deve ser maior que zero.");
 
+            if (request.CargoInsuranceValue.HasValue && request.CargoInsuranceValue.Value < 0)
+                throw new ArgumentException("Seguro da carga nao pode ser negativo.");
+
             var trip = await _tripDomainService.FinishTripAsync(
                 tripId,
                 companyId,
@@ -129,6 +135,8 @@ namespace Omega.FleetManagement.Application.Services
                 request.FinishKm,
                 request.UnloadedWeightTons,
                 request.FreightValue,
+                request.CargoInsuranceValue,
+                request.ReceiptDocumentTypeId,
                 request.DieselKmPerLiter,
                 request.ArlaKmPerLiter);
 
@@ -146,19 +154,22 @@ namespace Omega.FleetManagement.Application.Services
             if (expenseType == null || expenseType.CompanyId != companyId)
                 throw new ArgumentException("Tipo de despesa inválido para a empresa.");
 
+            var isFuelOrArla = IsFuelOrArlaExpense(expenseType.Name);
             var expense = new Domain.Entities.Expense(
                 companyId: companyId,
                 expenseTypeId: request.ExpenseTypeId,
                 description: request.Description,
-                value: request.Value,
+                value: ResolveExpenseValue(request.Value, request.Liters, request.PricePerLiter, isFuelOrArla),
                 date: request.ExpenseDate?.ToUniversalTime() ?? DateTime.UtcNow,
                 tripId: tripId);
 
-            var isFuelOrArla = IsFuelOrArlaExpense(expenseType.Name);
             if (isFuelOrArla && (!request.Liters.HasValue || request.Liters.Value <= 0))
                 throw new ArgumentException("Para Combustível ou Arla, informe os litros.");
+            if (isFuelOrArla && (!request.PricePerLiter.HasValue || request.PricePerLiter.Value <= 0))
+                throw new ArgumentException("Para Combustível ou Arla, informe o preco por litro.");
 
             expense.SetLiters(isFuelOrArla ? request.Liters : null);
+            expense.SetPricePerLiter(isFuelOrArla ? request.PricePerLiter : null);
 
             trip.AddExpense(expense);
 
@@ -182,13 +193,15 @@ namespace Omega.FleetManagement.Application.Services
 
             expense.SetExpenseType(request.ExpenseTypeId);
             expense.SetDescription(request.Description);
-            expense.SetValue(request.Value);
-
             var isFuelOrArla = IsFuelOrArlaExpense(expenseType.Name);
             if (isFuelOrArla && (!request.Liters.HasValue || request.Liters.Value <= 0))
                 throw new ArgumentException("Para Combustível ou Arla, informe os litros.");
+            if (isFuelOrArla && (!request.PricePerLiter.HasValue || request.PricePerLiter.Value <= 0))
+                throw new ArgumentException("Para Combustível ou Arla, informe o preco por litro.");
 
+            expense.SetValue(ResolveExpenseValue(request.Value, request.Liters, request.PricePerLiter, isFuelOrArla));
             expense.SetLiters(isFuelOrArla ? request.Liters : null);
+            expense.SetPricePerLiter(isFuelOrArla ? request.PricePerLiter : null);
 
             if (request.ExpenseDate.HasValue)
                 expense.ChangeDate(request.ExpenseDate.Value.ToUniversalTime());
@@ -222,6 +235,9 @@ namespace Omega.FleetManagement.Application.Services
                 UnloadedWeightTons = t.UnloadedWeightTons,
                 FinishKm = t.FinishKm,
                 FreightValue = t.FreightValue,
+                CargoInsuranceValue = t.CargoInsuranceValue,
+                ReceiptDocumentTypeId = t.ReceiptDocumentTypeId,
+                ReceiptDocumentTypeName = t.ReceiptDocumentTypeName,
                 DieselKmPerLiter = t.DieselKmPerLiter,
                 ArlaKmPerLiter = t.ArlaKmPerLiter,
                 CommissionPercent = t.CommissionPercent,
@@ -258,6 +274,9 @@ namespace Omega.FleetManagement.Application.Services
                 UnloadedWeightTons = trip.UnloadedWeightTons,
                 FinishKm = trip.FinishKm,
                 FreightValue = trip.FreightValue,
+                CargoInsuranceValue = trip.CargoInsuranceValue,
+                ReceiptDocumentTypeId = trip.ReceiptDocumentTypeId,
+                ReceiptDocumentTypeName = trip.ReceiptDocumentTypeName,
                 DieselKmPerLiter = trip.DieselKmPerLiter,
                 ArlaKmPerLiter = trip.ArlaKmPerLiter,
                 CommissionPercent = trip.CommissionPercent,
@@ -269,6 +288,7 @@ namespace Omega.FleetManagement.Application.Services
                     Description = e.Description,
                     Value = e.Value,
                     Liters = e.Liters,
+                    PricePerLiter = e.PricePerLiter,
                     ExpenseDate = e.Date,
                     ExpenseTypeId = e.ExpenseTypeId,
                     ExpenseTypeName = e.ExpenseType?.Name
@@ -281,6 +301,20 @@ namespace Omega.FleetManagement.Application.Services
         {
             var normalized = (expenseTypeName ?? string.Empty).Trim().ToLowerInvariant();
             return normalized.Contains("combust") || normalized.Contains("diesel") || normalized.Contains("arla");
+        }
+
+        private static decimal ResolveExpenseValue(decimal informedValue, decimal? liters, decimal? pricePerLiter, bool isFuelOrArla)
+        {
+            if (!isFuelOrArla)
+                return informedValue;
+
+            if (!liters.HasValue || liters.Value <= 0)
+                throw new ArgumentException("Para Combustível ou Arla, informe os litros.");
+
+            if (!pricePerLiter.HasValue || pricePerLiter.Value <= 0)
+                throw new ArgumentException("Para Combustível ou Arla, informe o preco por litro.");
+
+            return decimal.Round(liters.Value * pricePerLiter.Value, 2, MidpointRounding.AwayFromZero);
         }
     }
 }

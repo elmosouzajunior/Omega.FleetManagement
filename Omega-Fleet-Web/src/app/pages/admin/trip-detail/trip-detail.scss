@@ -222,6 +222,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 1.25rem;
+  overflow-y: auto;
   z-index: 9999;
 }
 
@@ -232,6 +234,16 @@
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   padding: 1rem;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+}
+
+.modal-card-finish {
+  max-width: 760px;
+  max-height: min(88vh, 860px);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
 }
 
 .modal-card-lg {
@@ -245,9 +257,22 @@
   margin-bottom: 0.8rem;
 }
 
+.modal-card-finish .modal-header {
+  margin-bottom: 0;
+  padding: 1.1rem 1.25rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
 .modal-header h3 {
   margin: 0;
   color: #0f172a;
+}
+
+.modal-subtitle {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+  font-size: 0.92rem;
 }
 
 .btn-close {
@@ -255,6 +280,15 @@
   background: transparent;
   font-size: 1.2rem;
   cursor: pointer;
+}
+
+.modal-body {
+  min-height: 0;
+}
+
+.modal-card-finish .modal-body {
+  padding: 1.1rem 1.25rem;
+  overflow-y: auto;
 }
 
 .form-group {
@@ -292,6 +326,53 @@
   grid-column: 1 / -1;
 }
 
+.finish-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem 1rem;
+}
+
+.finish-field-full {
+  grid-column: 1 / -1;
+}
+
+.finish-section {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  margin-bottom: 1rem;
+}
+
+.finish-section-soft {
+  background: #f8fafc;
+}
+
+.section-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #475569;
+  margin-bottom: 0.9rem;
+}
+
+.helper-stack {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.helper-text {
+  margin: 0;
+  padding: 0.85rem 0.95rem;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
 .error-msg {
   color: #b91c1c;
   margin: 0.5rem 0 0;
@@ -302,6 +383,13 @@
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 1rem;
+}
+
+.modal-card-finish .modal-footer {
+  margin-top: 0;
+  padding: 1rem 1.25rem 1.1rem;
+  border-top: 1px solid #e2e8f0;
+  background: #fff;
 }
 
 @media (max-width: 1024px) {
@@ -329,5 +417,26 @@
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .finish-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-overlay {
+    padding: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .modal-card-finish {
+    width: 100%;
+    max-height: calc(100vh - 1.5rem);
+  }
+
+  .modal-card-finish .modal-header,
+  .modal-card-finish .modal-body,
+  .modal-card-finish .modal-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }

@@ -8,6 +8,8 @@ namespace Omega.FleetManagement.Domain.Entities
     {
         [ForeignKey("Product")]
         public Guid? ProductId { get; private set; }
+        [ForeignKey("ReceiptDocumentType")]
+        public Guid? ReceiptDocumentTypeId { get; private set; }
         [ForeignKey("Driver")]
         public Guid DriverId { get; private set; }
 
@@ -26,15 +28,18 @@ namespace Omega.FleetManagement.Domain.Entities
         public decimal? UnloadedWeightTons { get; private set; }
         public decimal FinishKm { get; private set; }
         public decimal FreightValue { get; private set; }
+        public decimal? CargoInsuranceValue { get; private set; }
         public decimal? DieselKmPerLiter { get; private set; }
         public decimal? ArlaKmPerLiter { get; private set; }
         public decimal CommissionPercent { get; private set; }
         public decimal CommissionValue { get; private set; }
+        public string? ReceiptDocumentTypeName { get; private set; }
         public TripStatus Status { get; private set; }
         public string? AttachmentPath { get; private set; }
 
         // Propriedades de navegação
         public virtual Product? Product { get; private set; }
+        public virtual ReceiptDocumentType? ReceiptDocumentType { get; private set; }
         public virtual Driver Driver { get; private set; } = null!;
         public virtual Vehicle Vehicle { get; private set; } = null!;
 
@@ -112,7 +117,17 @@ namespace Omega.FleetManagement.Domain.Entities
             CommissionValue = (freightValue * CommissionPercent) / 100;
         }
 
-        public void Finish(string unloadingLocation, DateTime unloadingDate, decimal finishKm, decimal unloadedWeightTons, decimal freightValue, decimal? dieselKmPerLiter, decimal? arlaKmPerLiter)
+        public void Finish(
+            string unloadingLocation,
+            DateTime unloadingDate,
+            decimal finishKm,
+            decimal unloadedWeightTons,
+            decimal freightValue,
+            decimal? cargoInsuranceValue,
+            Guid? receiptDocumentTypeId,
+            string? receiptDocumentTypeName,
+            decimal? dieselKmPerLiter,
+            decimal? arlaKmPerLiter)
         {
             if (Status != TripStatus.Open)
                 throw new ApplicationException("Apenas viagens abertas podem ser finalizadas.");
@@ -125,6 +140,9 @@ namespace Omega.FleetManagement.Domain.Entities
             FinishKm = finishKm;
             UnloadedWeightTons = unloadedWeightTons;
             FreightValue = freightValue;
+            CargoInsuranceValue = cargoInsuranceValue;
+            ReceiptDocumentTypeId = receiptDocumentTypeId;
+            ReceiptDocumentTypeName = receiptDocumentTypeName;
             CommissionValue = (freightValue * CommissionPercent) / 100;
             DieselKmPerLiter = dieselKmPerLiter;
             ArlaKmPerLiter = arlaKmPerLiter;
@@ -140,6 +158,9 @@ namespace Omega.FleetManagement.Domain.Entities
             UnloadingDate = null;
             UnloadingLocation = null;
             UnloadedWeightTons = null;
+            CargoInsuranceValue = null;
+            ReceiptDocumentTypeId = null;
+            ReceiptDocumentTypeName = null;
             FinishKm = 0;
         }
 

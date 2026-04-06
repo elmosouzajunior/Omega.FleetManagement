@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Omega.FleetManagement.Infrastructure.Data.Context;
 
@@ -11,9 +12,11 @@ using Omega.FleetManagement.Infrastructure.Data.Context;
 namespace Omega.FleetManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(FleetContext))]
-    partial class FleetContextModelSnapshot : ModelSnapshot
+    [Migration("20260406140351_AddExpensePricePerLiter")]
+    partial class AddExpensePricePerLiter
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -401,35 +404,6 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                     b.ToTable("products", (string)null);
                 });
 
-            modelBuilder.Entity("Omega.FleetManagement.Domain.Entities.ReceiptDocumentType", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("receipt_document_types", (string)null);
-                });
-
             modelBuilder.Entity("Omega.FleetManagement.Domain.Entities.Trip", b =>
                 {
                     b.Property<Guid>("Id")
@@ -444,10 +418,6 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("AttachmentPath");
-
-                    b.Property<decimal?>("CargoInsuranceValue")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("CargoInsuranceValue");
 
                     b.Property<string>("ClientName")
                         .HasMaxLength(150)
@@ -509,14 +479,6 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                         .HasColumnType("nvarchar(120)")
                         .HasColumnName("ProductName");
 
-                    b.Property<Guid?>("ReceiptDocumentTypeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ReceiptDocumentTypeName")
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)")
-                        .HasColumnName("ReceiptDocumentTypeName");
-
                     b.Property<decimal>("StartKm")
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("StartKm");
@@ -553,8 +515,6 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                     b.HasIndex("DriverId");
 
                     b.HasIndex("ProductId");
-
-                    b.HasIndex("ReceiptDocumentTypeId");
 
                     b.HasIndex("Status");
 
@@ -810,11 +770,6 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Omega.FleetManagement.Domain.Entities.ReceiptDocumentType", "ReceiptDocumentType")
-                        .WithMany("Trips")
-                        .HasForeignKey("ReceiptDocumentTypeId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Omega.FleetManagement.Domain.Entities.Vehicle", "Vehicle")
                         .WithMany()
                         .HasForeignKey("VehicleId")
@@ -824,8 +779,6 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                     b.Navigation("Driver");
 
                     b.Navigation("Product");
-
-                    b.Navigation("ReceiptDocumentType");
 
                     b.Navigation("Vehicle");
                 });
@@ -866,11 +819,6 @@ namespace Omega.FleetManagement.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("Omega.FleetManagement.Domain.Entities.Product", b =>
-                {
-                    b.Navigation("Trips");
-                });
-
-            modelBuilder.Entity("Omega.FleetManagement.Domain.Entities.ReceiptDocumentType", b =>
                 {
                     b.Navigation("Trips");
                 });

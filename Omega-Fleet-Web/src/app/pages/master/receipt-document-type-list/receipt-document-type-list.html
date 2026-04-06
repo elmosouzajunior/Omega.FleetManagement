@@ -1,0 +1,110 @@
+<div class="list-container">
+  <header class="list-header">
+    <div class="title-area">
+      <h1>Tipos de Documento de Recebimento</h1>
+      <span class="subtitle">Cadastro e manutencao exclusiva do usuario Master</span>
+    </div>
+
+    <div class="filters-bar">
+      <label class="check-inline">
+        <input type="checkbox" [(ngModel)]="showInactive" (change)="onShowInactiveChange()" />
+        Exibir inativos
+      </label>
+      <span class="count"><strong>{{ items.length }}</strong> tipos cadastrados</span>
+    </div>
+  </header>
+
+  <div class="table-card form-card">
+    <h2>Novo Tipo de Documento</h2>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Empresa</label>
+        <select class="modern-select" [(ngModel)]="selectedCompanyId" (change)="onCompanyChange()" [disabled]="saving || loadingCompanies">
+          <option value="">Selecione...</option>
+          <option *ngFor="let company of companies" [value]="company.id || company.Id">
+            {{ company.name || company.Name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Nome</label>
+        <input class="modern-select" [(ngModel)]="name" placeholder="Ex: CTe" [disabled]="saving" />
+      </div>
+
+      <div class="form-group full">
+        <label>Descricao (opcional)</label>
+        <input class="modern-select" [(ngModel)]="description" placeholder="Descricao do tipo de documento" [disabled]="saving" />
+      </div>
+    </div>
+
+    <footer class="form-actions">
+      <button class="btn-new" (click)="create()" [disabled]="saving">
+        {{ saving ? 'Salvando...' : 'Cadastrar Tipo' }}
+      </button>
+    </footer>
+  </div>
+
+  <div class="card table-card" *ngIf="editingItem">
+    <h2>Editar Tipo de Documento</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nome</label>
+        <input class="modern-select" [(ngModel)]="editName" [disabled]="savingEdit" />
+      </div>
+      <div class="form-group">
+        <label>Descricao (opcional)</label>
+        <input class="modern-select" [(ngModel)]="editDescription" [disabled]="savingEdit" />
+      </div>
+    </div>
+    <footer class="form-actions">
+      <button class="btn-secondary" (click)="cancelEdit()" [disabled]="savingEdit">Cancelar</button>
+      <button class="btn-new" (click)="saveEdit()" [disabled]="savingEdit">
+        {{ savingEdit ? 'Salvando...' : 'Salvar Edicao' }}
+      </button>
+    </footer>
+  </div>
+
+  <div class="card table-card">
+    <div class="table-head">
+      <h2>Tipos Cadastrados</h2>
+      <span class="loading" *ngIf="loadingCompanies || loadingItems">Carregando...</span>
+    </div>
+
+    <table class="modern-table" *ngIf="!loadingItems">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Descricao</th>
+          <th>Status</th>
+          <th class="text-right">Acoes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items">
+          <td class="bold">{{ item.name }}</td>
+          <td>{{ item.description || '-' }}</td>
+          <td>
+            <span class="badge" [ngClass]="item.isActive ? 'bg-success' : 'bg-danger'">
+              {{ item.isActive ? 'Ativo' : 'Inativo' }}
+            </span>
+          </td>
+          <td class="actions-cell">
+            <button class="btn-action" (click)="openEdit(item)" [disabled]="savingEdit">Editar</button>
+            <button class="btn-action" [ngClass]="item.isActive ? 'danger' : 'success'" (click)="toggleStatus(item)">
+              {{ item.isActive ? 'Inativar' : 'Ativar' }}
+            </button>
+          </td>
+        </tr>
+
+        <tr *ngIf="items.length === 0">
+          <td colspan="4" class="empty">Nenhum tipo de documento cadastrado para esta empresa.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="success-msg" *ngIf="successMessage">{{ successMessage }}</p>
+</div>
