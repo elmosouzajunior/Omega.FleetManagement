@@ -9,6 +9,20 @@
   <div class="table-card p-4">
     <form [formGroup]="tripForm" (ngSubmit)="onSubmit()">
       <div class="row">
+        <div class="col-md-6 mb-4">
+          <label class="form-label fw-bold">Produto</label>
+          <select class="form-select modern-select" formControlName="productId">
+            <option value="" disabled selected>Selecione o produto</option>
+            <option *ngFor="let product of availableProducts" [value]="product.id || product.Id">
+              {{ product.name || product.Name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="col-md-6 mb-4">
+          <label class="form-label fw-bold">Cliente</label>
+          <input type="text" class="form-control" formControlName="clientName" placeholder="Ex: Cooperativa Alfa">
+        </div>
 
         <div class="col-md-6 mb-4">
           <label class="form-label fw-bold">Veículo / Placa</label>
@@ -99,8 +113,7 @@
       </div>
 
       <div class="d-flex justify-content-end gap-3 mt-4">
-        <button type="button" class="btn btn-light"
-          (click)="tripForm.reset(); selectedDriverDisplay = ''; loadedWeightDisplay = ''">Limpar</button>
+        <button type="button" class="btn btn-light" (click)="resetForm()">Limpar</button>
         <button type="submit" class="btn-new" [disabled]="tripForm.invalid">
           Confirmar e Abrir Viagem
         </button>

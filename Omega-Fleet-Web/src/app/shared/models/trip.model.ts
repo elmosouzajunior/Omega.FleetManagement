@@ -1,4 +1,6 @@
 export interface OpenTripRequest {
+    productId: string;
+    clientName: string;
     driverId: string;
     vehicleId: string;
     loadingLocation: string;

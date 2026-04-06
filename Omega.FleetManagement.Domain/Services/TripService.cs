@@ -8,16 +8,20 @@ namespace Omega.FleetManagement.Domain.Services
         private readonly ITripRepository _tripRepository;
         private readonly IVehicleRepository _vehicleRepository;
         private readonly IDriverRepository _driverRepository;
+        private readonly IProductRepository _productRepository;
 
-        public TripService(ITripRepository tripRepository, IVehicleRepository vehicleRepository, IDriverRepository driverRepository)
+        public TripService(ITripRepository tripRepository, IVehicleRepository vehicleRepository, IDriverRepository driverRepository, IProductRepository productRepository)
         {
             _tripRepository = tripRepository;
             _vehicleRepository = vehicleRepository;
             _driverRepository = driverRepository;
+            _productRepository = productRepository;
         }
 
         public async Task<Trip> OpenTripAsync(
             Guid companyId,
+            Guid productId,
+            string clientName,
             Guid driverId,
             Guid vehicleId,
             decimal commissionPercent,
@@ -56,18 +60,29 @@ namespace Omega.FleetManagement.Domain.Services
             if (!driver.HasCommissionRate(commissionPercent))
                 throw new ArgumentException("A comissão selecionada não pertence ao motorista informado.");
 
+            var product = await _productRepository.GetByIdAsync(productId);
+            if (product == null || product.CompanyId != companyId)
+                throw new ArgumentException("Produto invalido para a empresa.");
+            if (!product.IsActive)
+                throw new ArgumentException("O produto informado esta inativo.");
+
             if (loadingDate == default) throw new ArgumentException("Data de carregamento é obrigatória.");
             if (loadingDate > DateTime.UtcNow.AddDays(1)) throw new ArgumentException("Data de carregamento não pode ser futura.");
             if (startKm < 0) throw new ArgumentException("KM inicial não pode ser negativo.");
             if (tonValue <= 0) throw new ArgumentException("Valor da tonelada deve ser maior que zero.");
             if (loadedWeightTons <= 0) throw new ArgumentException("Peso carregado deve ser maior que zero.");
             if (freightValue <= 0) throw new ArgumentException("Valor do frete deve ser maior que zero.");
+            if (productId == Guid.Empty) throw new ArgumentException("Produto e obrigatorio.");
+            if (string.IsNullOrWhiteSpace(clientName)) throw new ArgumentException("Cliente e obrigatorio.");
             if (string.IsNullOrWhiteSpace(loadingLocation)) throw new ArgumentException("Local de carregamento é obrigatório.");
             if (string.IsNullOrWhiteSpace(unloadingLocation)) throw new ArgumentException("Destino é obrigatório na abertura da viagem.");
 
             // 4. Cria a instância da entidade Trip
             var trip = new Trip(
                 companyId,
+                product.Id,
+                product.Name,
+                clientName.Trim(),
                 driverId,
                 vehicleId,
                 loadingLocation,
@@ -103,6 +118,8 @@ namespace Omega.FleetManagement.Domain.Services
         public async Task<Trip> UpdateTripOpeningAsync(
             Guid tripId,
             Guid companyId,
+            Guid productId,
+            string clientName,
             Guid driverId,
             Guid vehicleId,
             string loadingLocation,
@@ -141,16 +158,27 @@ namespace Omega.FleetManagement.Domain.Services
             if (vehicle.DriverId.HasValue && vehicle.DriverId.Value != driverId)
                 throw new ArgumentException("O veículo está vinculado a outro motorista.");
 
+            var product = await _productRepository.GetByIdAsync(productId);
+            if (product == null || product.CompanyId != companyId)
+                throw new ArgumentException("Produto invalido para a empresa.");
+            if (!product.IsActive)
+                throw new ArgumentException("O produto informado esta inativo.");
+
             if (loadingDate == default) throw new ArgumentException("Data de carregamento é obrigatória.");
             if (loadingDate > DateTime.UtcNow.AddDays(1)) throw new ArgumentException("Data de carregamento não pode ser futura.");
             if (startKm < 0) throw new ArgumentException("KM inicial não pode ser negativo.");
             if (tonValue <= 0) throw new ArgumentException("Valor da tonelada deve ser maior que zero.");
             if (loadedWeightTons <= 0) throw new ArgumentException("Peso carregado deve ser maior que zero.");
             if (freightValue <= 0) throw new ArgumentException("Valor do frete deve ser maior que zero.");
+            if (productId == Guid.Empty) throw new ArgumentException("Produto e obrigatorio.");
+            if (string.IsNullOrWhiteSpace(clientName)) throw new ArgumentException("Cliente e obrigatorio.");
             if (string.IsNullOrWhiteSpace(loadingLocation)) throw new ArgumentException("Local de carregamento é obrigatório.");
             if (string.IsNullOrWhiteSpace(unloadingLocation)) throw new ArgumentException("Destino é obrigatório na abertura da viagem.");
 
             trip.UpdateOpening(
+                product.Id,
+                product.Name,
+                clientName.Trim(),
                 driverId,
                 vehicleId,
                 loadingLocation.Trim(),

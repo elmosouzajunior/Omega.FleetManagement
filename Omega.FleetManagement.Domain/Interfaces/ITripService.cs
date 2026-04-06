@@ -6,6 +6,8 @@ namespace Omega.FleetManagement.Domain.Interfaces
     {
         Task<Trip> OpenTripAsync(
             Guid companyId,
+            Guid productId,
+            string clientName,
             Guid driverId,
             Guid vehicleId,
             decimal commissionPercent,
@@ -21,6 +23,8 @@ namespace Omega.FleetManagement.Domain.Interfaces
         Task<Trip> UpdateTripOpeningAsync(
             Guid tripId,
             Guid companyId,
+            Guid productId,
+            string clientName,
             Guid driverId,
             Guid vehicleId,
             string loadingLocation,

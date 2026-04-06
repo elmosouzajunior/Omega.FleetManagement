@@ -3,6 +3,8 @@
 namespace Omega.FleetManagement.Application.DTOs
 {
     public record OpenTripRequest(
+        Guid ProductId,
+        string ClientName,
         Guid DriverId,
         Guid VehicleId,
         decimal CommissionPercent,

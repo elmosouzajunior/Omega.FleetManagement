@@ -29,6 +29,7 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
         public async Task<Trip?> GetByIdAsync(Guid id, Guid companyId)
         {
             return await _context.Trips
+                .Include(t => t.Product)
                 .Include(t => t.Driver)
                 .Include(t => t.Vehicle)
                 .Include(t => t.Expenses)
@@ -39,6 +40,7 @@ namespace Omega.FleetManagement.Infrastructure.Data.Repositories
         public async Task<IEnumerable<Trip>> GetByCompanyIdAsync(Guid companyId)
         {
             return await _context.Trips
+                .Include(t => t.Product)
                 .Include(t => t.Driver)
                 .Include(t => t.Vehicle)
                 .Where(t => t.CompanyId == companyId)                

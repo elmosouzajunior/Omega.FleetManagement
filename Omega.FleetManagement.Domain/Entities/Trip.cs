@@ -6,12 +6,16 @@ namespace Omega.FleetManagement.Domain.Entities
 {
     public class Trip : Entity
     {
+        [ForeignKey("Product")]
+        public Guid? ProductId { get; private set; }
         [ForeignKey("Driver")]
         public Guid DriverId { get; private set; }
 
         [ForeignKey("Vehicle")]
         public Guid VehicleId { get; private set; }
 
+        public string? ProductName { get; private set; }
+        public string? ClientName { get; private set; }
         public string LoadingLocation { get; private set; } = string.Empty;
         public string? UnloadingLocation { get; private set; }
         public DateTime LoadingDate { get; private set; }
@@ -30,6 +34,7 @@ namespace Omega.FleetManagement.Domain.Entities
         public string? AttachmentPath { get; private set; }
 
         // Propriedades de navegação
+        public virtual Product? Product { get; private set; }
         public virtual Driver Driver { get; private set; } = null!;
         public virtual Vehicle Vehicle { get; private set; } = null!;
 
@@ -38,6 +43,9 @@ namespace Omega.FleetManagement.Domain.Entities
 
         public Trip(
             Guid companyId,
+            Guid? productId,
+            string? productName,
+            string? clientName,
             Guid driverId,
             Guid vehicleId,
             string loadingLocation,
@@ -50,6 +58,9 @@ namespace Omega.FleetManagement.Domain.Entities
             decimal commissionPercent,
             string? attachmentPath) : base(companyId)
         {
+            ProductId = productId;
+            ProductName = productName;
+            ClientName = clientName;
             DriverId = driverId;
             VehicleId = vehicleId;
             LoadingLocation = loadingLocation;
@@ -70,6 +81,9 @@ namespace Omega.FleetManagement.Domain.Entities
         }
 
         public void UpdateOpening(
+            Guid? productId,
+            string? productName,
+            string? clientName,
             Guid driverId,
             Guid vehicleId,
             string loadingLocation,
@@ -83,6 +97,9 @@ namespace Omega.FleetManagement.Domain.Entities
             if (Status != TripStatus.Open)
                 throw new ApplicationException("Somente viagens abertas podem ter a abertura editada.");
 
+            ProductId = productId;
+            ProductName = productName;
+            ClientName = clientName;
             DriverId = driverId;
             VehicleId = vehicleId;
             LoadingLocation = loadingLocation;

@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TripService } from '../../../services/trip';
 import { VehicleService } from '../../../services/vehicle';
-import { finalize } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-trip-detail',
@@ -29,6 +29,7 @@ export class TripDetailComponent implements OnInit {
   showEditOpeningModal = false;
   savingOpeningEdit = false;
   loadingVehicles = false;
+  loadingProducts = false;
   finishError = '';
   openingEditError = '';
   showEditExpenseModal = false;
@@ -36,6 +37,7 @@ export class TripDetailComponent implements OnInit {
   loadingExpenseTypes = false;
   expenseEditError = '';
   expenseTypes: any[] = [];
+  products: any[] = [];
   availableVehicles: any[] = [];
   selectedOpeningDriverDisplay = '';
   openingLoadedWeightDisplay = '';
@@ -60,6 +62,8 @@ export class TripDetailComponent implements OnInit {
   };
 
   openingEditForm = {
+    productId: '',
+    clientName: '',
     vehicleId: '',
     driverId: '',
     loadingLocation: '',
@@ -133,9 +137,12 @@ export class TripDetailComponent implements OnInit {
 
     this.showEditOpeningModal = true;
     this.loadingVehicles = true;
+    this.loadingProducts = true;
     this.openingEditError = '';
     this.selectedOpeningDriverDisplay = this.trip?.driverName || '';
     this.openingEditForm = {
+      productId: this.trip?.productId || '',
+      clientName: this.trip?.clientName || '',
       vehicleId: this.trip?.vehicleId || '',
       driverId: this.trip?.driverId || '',
       loadingLocation: this.trip?.loadingLocation || '',
@@ -148,19 +155,30 @@ export class TripDetailComponent implements OnInit {
     };
     this.openingLoadedWeightDisplay = this.formatDecimalInput(this.trip?.loadedWeightTons);
 
-    this.vehicleService.getVehicles().subscribe({
-      next: (res: any) => {
-        const data = res?.$values || (Array.isArray(res) ? res : []);
-        this.availableVehicles = (data || []).filter((vehicle: any) =>
+    forkJoin({
+      vehicles: this.vehicleService.getVehicles(),
+      products: this.tripService.getProducts()
+    }).subscribe({
+      next: ({ vehicles, products }) => {
+        const vehicleSource = vehicles as any;
+        const vehicleData = vehicleSource?.$values || (Array.isArray(vehicleSource) ? vehicleSource : []);
+        const productData = products?.data || products?.$values || (Array.isArray(products) ? products : []);
+
+        this.availableVehicles = (vehicleData || []).filter((vehicle: any) =>
           (vehicle?.driverName || '').trim() !== '' || vehicle.id === this.openingEditForm.vehicleId
         );
+        this.products = (productData || []).filter((product: any) =>
+          (product?.isActive ?? product?.IsActive ?? true) || (product.id || product.Id) === this.openingEditForm.productId
+        );
         this.loadingVehicles = false;
+        this.loadingProducts = false;
         this.syncOpeningDriverDisplay();
         this.cdr.detectChanges();
       },
       error: () => {
         this.loadingVehicles = false;
-        this.openingEditError = 'Nao foi possivel carregar os veiculos.';
+        this.loadingProducts = false;
+        this.openingEditError = 'Nao foi possivel carregar veiculos e produtos.';
         this.cdr.detectChanges();
       }
     });
@@ -171,6 +189,7 @@ export class TripDetailComponent implements OnInit {
     this.showEditOpeningModal = false;
     this.openingEditError = '';
     this.availableVehicles = [];
+    this.products = [];
     this.selectedOpeningDriverDisplay = '';
     this.openingLoadedWeightDisplay = '';
     this.cdr.detectChanges();
@@ -188,13 +207,14 @@ export class TripDetailComponent implements OnInit {
     const loadingLocation = (this.openingEditForm.loadingLocation || '').trim();
     const unloadingLocation = (this.openingEditForm.unloadingLocation || '').trim();
     const loadingDate = (this.openingEditForm.loadingDate || '').trim();
+    const clientName = (this.openingEditForm.clientName || '').trim();
     const startKm = Number(this.openingEditForm.startKm || 0);
     const tonValue = Number(this.openingEditForm.tonValue || 0);
     const loadedWeightTons = Number(this.openingEditForm.loadedWeightTons || 0);
     const freightValue = Number(this.openingEditForm.freightValue || 0);
 
-    if (!this.openingEditForm.vehicleId || !this.openingEditForm.driverId) {
-      this.openingEditError = 'Selecione um veiculo com motorista vinculado.';
+    if (!this.openingEditForm.productId || !clientName || !this.openingEditForm.vehicleId || !this.openingEditForm.driverId) {
+      this.openingEditError = 'Selecione produto, informe cliente e escolha um veiculo com motorista vinculado.';
       this.cdr.detectChanges();
       return;
     }
@@ -215,6 +235,8 @@ export class TripDetailComponent implements OnInit {
     this.openingEditError = '';
 
     this.tripService.updateOpening(this.trip.id, {
+      productId: this.openingEditForm.productId,
+      clientName,
       vehicleId: this.openingEditForm.vehicleId,
       driverId: this.openingEditForm.driverId,
       loadingLocation,

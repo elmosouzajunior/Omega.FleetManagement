@@ -30,6 +30,7 @@ import { TripDetailComponent } from './pages/admin/trip-detail/trip-detail';
 import { TripExpenseCreateComponent } from './pages/admin/trip-expense-create/trip-expense-create';
 import { VehicleExpenseCreateComponent } from './pages/admin/vehicle-expense-create/vehicle-expense-create';
 import { ExpenseTypeListComponent } from './pages/master/expense-type-list/expense-type-list';
+import { ProductListComponent } from './pages/master/product-list/product-list';
 import { ReportCostKmComponent } from './pages/admin/report-cost-km/report-cost-km';
 
 registerLocaleData(localePt, 'pt-BR');
@@ -57,6 +58,7 @@ registerLocaleData(localePt, 'pt-BR');
     VehicleExpenseCreateComponent,
     ReportCostKmComponent,
     ExpenseTypeListComponent,
+    ProductListComponent,
   ],
   imports: [
     BrowserModule,

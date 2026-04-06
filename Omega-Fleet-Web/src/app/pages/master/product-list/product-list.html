@@ -1,0 +1,113 @@
+<div class="list-container">
+  <header class="list-header">
+    <div class="title-area">
+      <h1>Produtos</h1>
+      <span class="subtitle">Cadastro e manutencao exclusiva do usuario Master</span>
+    </div>
+
+    <div class="filters-bar">
+      <label class="check-inline">
+        <input type="checkbox" [(ngModel)]="showInactive" (change)="onShowInactiveChange()" />
+        Exibir inativos
+      </label>
+      <span class="count"><strong>{{ products.length }}</strong> produtos cadastrados</span>
+    </div>
+  </header>
+
+  <div class="table-card form-card">
+    <h2>Novo Produto</h2>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Empresa</label>
+        <select class="modern-select" [(ngModel)]="selectedCompanyId" (change)="onCompanyChange()" [disabled]="saving || loadingCompanies">
+          <option value="">Selecione...</option>
+          <option *ngFor="let company of companies" [value]="company.id || company.Id">
+            {{ company.name || company.Name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Nome</label>
+        <input class="modern-select" [(ngModel)]="name" placeholder="Ex: Soja" [disabled]="saving" />
+      </div>
+
+      <div class="form-group full">
+        <label>Descricao (opcional)</label>
+        <input class="modern-select" [(ngModel)]="description" placeholder="Descricao do produto" [disabled]="saving" />
+      </div>
+    </div>
+
+    <footer class="form-actions">
+      <button class="btn-new" (click)="create()" [disabled]="saving">
+        {{ saving ? 'Salvando...' : 'Cadastrar Produto' }}
+      </button>
+    </footer>
+  </div>
+
+  <div class="card table-card" *ngIf="editingProduct">
+    <h2>Editar Produto</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nome</label>
+        <input class="modern-select" [(ngModel)]="editName" [disabled]="savingEdit" />
+      </div>
+      <div class="form-group">
+        <label>Descricao (opcional)</label>
+        <input class="modern-select" [(ngModel)]="editDescription" [disabled]="savingEdit" />
+      </div>
+    </div>
+    <footer class="form-actions">
+      <button class="btn-secondary" (click)="cancelEdit()" [disabled]="savingEdit">Cancelar</button>
+      <button class="btn-new" (click)="saveEdit()" [disabled]="savingEdit">
+        {{ savingEdit ? 'Salvando...' : 'Salvar Edicao' }}
+      </button>
+    </footer>
+  </div>
+
+  <div class="card table-card">
+    <div class="table-head">
+      <h2>Produtos Cadastrados</h2>
+      <span class="loading" *ngIf="loadingCompanies || loadingProducts">Carregando...</span>
+    </div>
+
+    <table class="modern-table" *ngIf="!loadingProducts">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Descricao</th>
+          <th>Status</th>
+          <th class="text-right">Acoes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let product of products">
+          <td class="bold">{{ product.name }}</td>
+          <td>{{ product.description || '-' }}</td>
+          <td>
+            <span class="badge" [ngClass]="product.isActive ? 'bg-success' : 'bg-danger'">
+              {{ product.isActive ? 'Ativo' : 'Inativo' }}
+            </span>
+          </td>
+          <td class="actions-cell">
+            <button class="btn-action" (click)="openEdit(product)" [disabled]="savingEdit">Editar</button>
+            <button
+              class="btn-action"
+              [ngClass]="product.isActive ? 'danger' : 'success'"
+              (click)="toggleStatus(product)">
+              {{ product.isActive ? 'Inativar' : 'Ativar' }}
+            </button>
+          </td>
+        </tr>
+
+        <tr *ngIf="products.length === 0">
+          <td colspan="4" class="empty">Nenhum produto cadastrado para esta empresa.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="success-msg" *ngIf="successMessage">{{ successMessage }}</p>
+</div>

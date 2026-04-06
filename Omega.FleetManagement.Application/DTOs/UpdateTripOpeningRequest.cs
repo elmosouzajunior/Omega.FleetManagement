@@ -2,6 +2,8 @@ namespace Omega.FleetManagement.Application.DTOs
 {
     public class UpdateTripOpeningRequest
     {
+        public Guid ProductId { get; set; }
+        public string ClientName { get; set; } = string.Empty;
         public Guid DriverId { get; set; }
         public Guid VehicleId { get; set; }
         public string LoadingLocation { get; set; } = string.Empty;

@@ -13,6 +13,7 @@ export class TripService {
   private platformId = inject(PLATFORM_ID);
   private readonly apiUrl = `${environment.apiBaseUrl}/trips`; 
   private readonly expenseTypesUrl = `${environment.apiBaseUrl}/expense-types`;
+  private readonly productsUrl = `${environment.apiBaseUrl}/products`;
 
   private getHeaders() {
     const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
@@ -72,6 +73,10 @@ export class TripService {
   getExpenseTypes(): Observable<any> {
     // Faltava o { headers } aqui
     return this.http.get<any>(this.expenseTypesUrl, { headers: this.getHeaders() });
+  }
+
+  getProducts(): Observable<any> {
+    return this.http.get<any>(this.productsUrl, { headers: this.getHeaders() });
   }
 
   private serializeFormDataValue(value: unknown): string | Blob {

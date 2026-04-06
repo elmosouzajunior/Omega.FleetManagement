@@ -3,6 +3,9 @@
     public class TripResponseDto
     {
         public Guid Id { get; set; }
+        public Guid? ProductId { get; set; }
+        public string? ProductName { get; set; }
+        public string? ClientName { get; set; }
         public Guid DriverId { get; set; }
         public string? DriverName { get; set; }
         public Guid VehicleId { get; set; }

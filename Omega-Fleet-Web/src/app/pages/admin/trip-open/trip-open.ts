@@ -24,6 +24,7 @@ export class TripOpenComponent implements OnInit {
 
   isAdmin: boolean = false;
   currentUserId: string = '';
+  availableProducts: any[] = [];
   activeVehicles: any[] = [];
   availableDrivers: any[] = [];
   selectedDriverDisplay: string = '';
@@ -31,6 +32,8 @@ export class TripOpenComponent implements OnInit {
 
   constructor() {
     this.tripForm = this.fb.group({
+      productId: ['', Validators.required],
+      clientName: ['', Validators.required],
       vehicleId: ['', Validators.required],
       driverId: ['', Validators.required],
       commissionPercent: [null, [Validators.required, Validators.min(0), Validators.max(100)]],
@@ -58,6 +61,7 @@ export class TripOpenComponent implements OnInit {
 
         this.loadVehicles();
         this.loadDrivers();
+        this.loadProducts();
 
       } catch (e) {
         console.error('Erro ao ler dados do usuário', e);
@@ -89,6 +93,20 @@ export class TripOpenComponent implements OnInit {
     this.driverService.getDrivers().subscribe({
       next: (drivers: any) => {
         this.availableDrivers = drivers?.$values || (Array.isArray(drivers) ? drivers : []);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  loadProducts() {
+    this.tripService.getProducts().subscribe({
+      next: (res: any) => {
+        const data = res?.data || res?.$values || (Array.isArray(res) ? res : []);
+        this.availableProducts = (data || []).filter((product: any) => (product?.isActive ?? product?.IsActive ?? true));
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.availableProducts = [];
         this.cdr.detectChanges();
       }
     });
@@ -153,6 +171,27 @@ export class TripOpenComponent implements OnInit {
         error: (err) => alert('Atenção: ' + (err.error?.message || "Erro ao abrir viagem"))
       });
     }
+  }
+
+  resetForm(): void {
+    this.tripForm.reset({
+      productId: '',
+      clientName: '',
+      vehicleId: '',
+      driverId: '',
+      commissionPercent: null,
+      loadingLocation: '',
+      unloadingLocation: '',
+      loadingDate: new Date().toISOString().substring(0, 10),
+      startKm: null,
+      tonValue: null,
+      loadedWeightTons: null,
+      freightValue: null
+    });
+    this.selectedDriverDisplay = '';
+    this.loadedWeightDisplay = '';
+    this.selectedFile = null;
+    this.cdr.detectChanges();
   }
 
   formatMoney(event: any) {

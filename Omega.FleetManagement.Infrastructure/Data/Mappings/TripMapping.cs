@@ -59,6 +59,13 @@ public class TripMapping : IEntityTypeConfiguration<Trip>
             .HasColumnName("CommissionValue")
             .HasColumnType("numeric(18,2)");
 
+        builder.Property(t => t.ProductName)
+            .HasColumnName("ProductName")
+            .HasMaxLength(120);
+
+        builder.Property(t => t.ClientName)
+            .HasColumnName("ClientName")
+            .HasMaxLength(150);
 
         builder.Property(t => t.LoadingLocation)
             .HasColumnName("LoadingLocation")
@@ -88,6 +95,11 @@ public class TripMapping : IEntityTypeConfiguration<Trip>
 
         // --- RELACIONAMENTOS ---
 
+        builder.HasOne(t => t.Product)
+            .WithMany(p => p.Trips)
+            .HasForeignKey(t => t.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(t => t.Driver)      // Usa a propriedade de navegação física
             .WithMany()                    // Se o Driver não tiver ICollection<Trip>
             .HasForeignKey(t => t.DriverId)
@@ -104,6 +116,7 @@ public class TripMapping : IEntityTypeConfiguration<Trip>
             .OnDelete(DeleteBehavior.Cascade);
 
         // --- ÍNDICES ---
+        builder.HasIndex(t => t.ProductId);
         builder.HasIndex(t => t.DriverId);
         builder.HasIndex(t => t.VehicleId);
         builder.HasIndex(t => t.Status);

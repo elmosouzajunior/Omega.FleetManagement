@@ -56,6 +56,14 @@
       <article class="panel">
         <h2>Abertura</h2>
         <div class="line-item">
+          <span>Produto</span>
+          <strong>{{ trip.productName || '-' }}</strong>
+        </div>
+        <div class="line-item">
+          <span>Cliente</span>
+          <strong>{{ trip.clientName || '-' }}</strong>
+        </div>
+        <div class="line-item">
           <span>Motorista</span>
           <strong>{{ trip.driver?.name || trip.driverName || '-' }}</strong>
         </div>
@@ -173,6 +181,21 @@
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group">
+          <label>Produto *</label>
+          <select [(ngModel)]="openingEditForm.productId" [disabled]="savingOpeningEdit || loadingProducts">
+            <option value="">Selecione...</option>
+            <option *ngFor="let product of products" [value]="product.id || product.Id">
+              {{ product.name || product.Name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Cliente *</label>
+          <input type="text" [(ngModel)]="openingEditForm.clientName" [disabled]="savingOpeningEdit" />
+        </div>
+
+        <div class="form-group">
           <label>Veiculo *</label>
           <select [disabled]="savingOpeningEdit || loadingVehicles" [ngModel]="openingEditForm.vehicleId" (ngModelChange)="openingEditForm.vehicleId = $event; syncOpeningDriverDisplay()" >
             <option value="">Selecione...</option>
@@ -228,7 +251,7 @@
 
     <footer class="modal-footer">
       <button class="btn-secondary" type="button" (click)="closeEditOpeningModal()" [disabled]="savingOpeningEdit">Cancelar</button>
-      <button class="btn-primary" type="button" (click)="submitOpeningEdit()" [disabled]="savingOpeningEdit || loadingVehicles">
+      <button class="btn-primary" type="button" (click)="submitOpeningEdit()" [disabled]="savingOpeningEdit || loadingVehicles || loadingProducts">
         {{ savingOpeningEdit ? 'Salvando...' : 'Salvar abertura' }}
       </button>
     </footer>

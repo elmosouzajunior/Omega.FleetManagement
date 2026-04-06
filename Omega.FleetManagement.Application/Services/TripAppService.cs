@@ -49,6 +49,8 @@ namespace Omega.FleetManagement.Application.Services
                 // Chamada ao domínio passando o StartKm (verifique o casing no seu DTO)
                 var trip = await _tripDomainService.OpenTripAsync(
                     companyId,
+                    dto.ProductId,
+                    dto.ClientName,
                     currentDriverId,
                     currentVehicleId,
                     dto.CommissionPercent,
@@ -81,6 +83,8 @@ namespace Omega.FleetManagement.Application.Services
             var trip = await _tripDomainService.UpdateTripOpeningAsync(
                 tripId,
                 companyId,
+                request.ProductId,
+                request.ClientName,
                 request.DriverId,
                 request.VehicleId,
                 request.LoadingLocation,
@@ -199,6 +203,9 @@ namespace Omega.FleetManagement.Application.Services
             var tripDtos = trips.Select(t => new TripResponseDto
             {
                 Id = t.Id,
+                ProductId = t.ProductId,
+                ProductName = t.ProductName,
+                ClientName = t.ClientName,
                 DriverId = t.DriverId,
                 DriverName = t.Driver?.Name ?? string.Empty,
                 VehicleId = t.VehicleId,
@@ -232,6 +239,9 @@ namespace Omega.FleetManagement.Application.Services
             var tripDetailDto = new TripDetailResponseDto
             {
                 Id = trip.Id,
+                ProductId = trip.ProductId,
+                ProductName = trip.ProductName,
+                ClientName = trip.ClientName,
                 DriverId = trip.DriverId,
                 DriverName = trip.Driver?.Name ?? string.Empty,
                 VehicleId = trip.VehicleId,

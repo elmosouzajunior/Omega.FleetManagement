@@ -86,6 +86,7 @@ builder.Services.AddScoped<ICompanyAdminRepository, CompanyAdminRepository>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 builder.Services.AddScoped<IExpenseRepository, ExpenseRepository>();
 builder.Services.AddScoped<IExpenseTypeRepository, ExpenseTypeRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 var storageProvider = (builder.Configuration["StorageConfig:Provider"] ?? "Local").ToLowerInvariant();
 if (storageProvider == "azureblob")
@@ -105,6 +106,7 @@ builder.Services.AddScoped<ITripAppService, TripAppService>();
 builder.Services.AddScoped<IDriverAppService, DriverAppService>();
 builder.Services.AddScoped<IVehicleAppService, VehicleAppService>();
 builder.Services.AddScoped<IExpenseTypeAppService, ExpenseTypeAppService>();
+builder.Services.AddScoped<IProductAppService, ProductAppService>();
 builder.Services.AddScoped<ICompanyAppService, CompanyAppService>();
 builder.Services.AddScoped<ICompanyAdminAppService, CompanyAdminAppService>();
 builder.Services.AddScoped<IDashboardAppService, DashboardAppService>();
