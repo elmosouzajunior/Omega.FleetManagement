@@ -42,7 +42,7 @@ export class TripOpenComponent implements OnInit {
       loadingDate: [new Date().toISOString().substring(0, 10), Validators.required],
       startKm: [null, [Validators.required, Validators.min(0)]],
       tonValue: [null, [Validators.required, Validators.min(0.01)]],
-      loadedWeightTons: [null, [Validators.required, Validators.min(0.01)]],
+      loadedWeightTons: [null],
       freightValue: [null, [Validators.required, Validators.min(0)]]
     });
   }

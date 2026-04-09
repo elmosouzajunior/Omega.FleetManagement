@@ -362,6 +362,11 @@ export class TripDetailComponent implements OnInit {
 
   openFinishModal(): void {
     if (!this.isTripOpen) return;
+    if (!this.hasLoadedWeight) {
+      this.pageError = 'Informe o peso carregado em Editar Abertura antes de finalizar a viagem.';
+      this.cdr.detectChanges();
+      return;
+    }
 
     this.finishError = '';
     this.finishForm = {
@@ -394,6 +399,11 @@ export class TripDetailComponent implements OnInit {
 
   submitFinish(): void {
     if (!this.trip?.id || this.savingFinish || this.loadingFinishMetrics) return;
+
+    if (!this.hasLoadedWeight) {
+      this.finishError = 'Informe o peso carregado em Editar Abertura antes de finalizar a viagem.';
+      return;
+    }
 
     const unloadingDate = (this.finishForm.unloadingDate || '').trim();
     const unloadingLocation = (this.finishForm.unloadingLocation || '').trim() || (this.trip?.unloadingLocation || '').trim();
@@ -544,6 +554,10 @@ export class TripDetailComponent implements OnInit {
     return Number(this.trip?.loadedWeightTons || 0);
   }
 
+  get hasLoadedWeight(): boolean {
+    return this.loadedWeightTons > 0;
+  }
+
   get unloadedWeightTons(): number | null {
     const unloadedWeight = Number(this.trip?.unloadedWeightTons);
     return Number.isFinite(unloadedWeight) && unloadedWeight > 0 ? unloadedWeight : null;
@@ -591,6 +605,10 @@ export class TripDetailComponent implements OnInit {
   }
 
   get finishFreightRuleSummary(): string {
+    if (!this.hasLoadedWeight) {
+      return 'Informe o peso carregado em Editar Abertura antes de finalizar a viagem.';
+    }
+
     const thresholdText = this.finishWeightLossThreshold.toLocaleString('pt-BR', {
       minimumFractionDigits: 3,
       maximumFractionDigits: 3

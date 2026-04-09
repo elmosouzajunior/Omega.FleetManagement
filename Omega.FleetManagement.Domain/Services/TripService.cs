@@ -72,8 +72,8 @@ namespace Omega.FleetManagement.Domain.Services
             if (loadingDate > DateTime.UtcNow.AddDays(1)) throw new ArgumentException("Data de carregamento não pode ser futura.");
             if (startKm < 0) throw new ArgumentException("KM inicial não pode ser negativo.");
             if (tonValue <= 0) throw new ArgumentException("Valor da tonelada deve ser maior que zero.");
-            if (loadedWeightTons <= 0) throw new ArgumentException("Peso carregado deve ser maior que zero.");
-            if (freightValue <= 0) throw new ArgumentException("Valor do frete deve ser maior que zero.");
+            if (loadedWeightTons < 0) throw new ArgumentException("Peso carregado nao pode ser negativo.");
+            if (freightValue < 0) throw new ArgumentException("Valor do frete nao pode ser negativo.");
             if (productId == Guid.Empty) throw new ArgumentException("Produto e obrigatorio.");
             if (string.IsNullOrWhiteSpace(clientName)) throw new ArgumentException("Cliente e obrigatorio.");
             if (string.IsNullOrWhiteSpace(loadingLocation)) throw new ArgumentException("Local de carregamento é obrigatório.");
@@ -235,6 +235,9 @@ namespace Omega.FleetManagement.Domain.Services
 
             if (freightValue <= 0)
                 throw new ArgumentException("Valor do frete deve ser maior que zero.");
+
+            if (trip.LoadedWeightTons <= 0)
+                throw new ArgumentException("Informe o peso carregado na abertura da viagem antes de finalizar.");
 
             if (cargoInsuranceValue.HasValue && cargoInsuranceValue.Value < 0)
                 throw new ArgumentException("Seguro da carga nao pode ser negativo.");
