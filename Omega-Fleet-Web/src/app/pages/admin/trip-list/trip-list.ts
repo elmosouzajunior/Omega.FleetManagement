@@ -14,7 +14,7 @@ export class TripListComponent implements OnInit {
   allTrips: any[] = [];
   filteredTrips: any[] = [];
   loading = true;
-  filterStatus = 'Open'; // Open, Closed ou Todas
+  filterStatus = 'Open'; // Open, Finished, Cancelled ou Todas
 
   ngOnInit() {
     this.loadTrips();
@@ -49,32 +49,54 @@ export class TripListComponent implements OnInit {
       return;
     }
 
-    this.filteredTrips = this.allTrips.filter(t => {
-      const isOpen = this.isTripOpen(t);
-      if (this.filterStatus === 'Open') return isOpen;
-      if (this.filterStatus === 'Closed') return !isOpen;
-      return true;
-    });
+    this.filteredTrips = this.allTrips.filter(t => this.getTripStatus(t) === this.filterStatus);
 
     this.cdr.detectChanges();
   }
 
-  isTripOpen(trip: any): boolean {
-    if (!trip) return false;
+  getTripStatus(trip: any): 'Open' | 'Finished' | 'Cancelled' {
+    if (!trip) return 'Finished';
 
     if (typeof trip.status === 'string') {
-      const normalized = trip.status.toLowerCase();
-      return normalized === 'open' || normalized === 'aberta';
+      const normalized = trip.status.trim().toLowerCase();
+
+      if (normalized === 'open' || normalized === 'aberta') return 'Open';
+      if (normalized === 'finished' || normalized === 'encerrada') return 'Finished';
+      if (normalized === 'cancelled' || normalized === 'canceled' || normalized === 'cancelada') return 'Cancelled';
     }
 
     if (typeof trip.status === 'number') {
-      return trip.status === 1;
+      if (trip.status === 1) return 'Open';
+      if (trip.status === 3) return 'Cancelled';
+      return 'Finished';
     }
 
     if (typeof trip.unloadingDate === 'string') {
-      return trip.unloadingDate.startsWith('0001') || trip.unloadingDate.trim() === '';
+      return trip.unloadingDate.startsWith('0001') || trip.unloadingDate.trim() === ''
+        ? 'Open'
+        : 'Finished';
     }
 
-    return !trip.unloadingDate;
+    return trip.unloadingDate ? 'Finished' : 'Open';
+  }
+
+  isTripOpen(trip: any): boolean {
+    return this.getTripStatus(trip) === 'Open';
+  }
+
+  getTripStatusLabel(trip: any): string {
+    const status = this.getTripStatus(trip);
+
+    if (status === 'Open') return 'ABERTA';
+    if (status === 'Cancelled') return 'CANCELADA';
+    return 'ENCERRADA';
+  }
+
+  getTripStatusClass(trip: any): string {
+    const status = this.getTripStatus(trip);
+
+    if (status === 'Open') return 'status-open';
+    if (status === 'Cancelled') return 'status-cancelled';
+    return 'status-finished';
   }
 }

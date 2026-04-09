@@ -5,6 +5,7 @@ import { BrowserModule, provideClientHydration, withEventReplay } from '@angular
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { RouterModule } from '@angular/router'; // <--- Adicionado
+import { NgApexchartsModule } from 'ng-apexcharts';
 
 import { AppRoutingModule } from './app-routing-module';
 import { App } from './app';
@@ -68,7 +69,8 @@ registerLocaleData(localePt, 'pt-BR');
     RouterModule, // <--- Adicionado para garantir o router-outlet
     AppRoutingModule,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    NgApexchartsModule
   ],
   providers: [
     { provide: LOCALE_ID, useValue: 'pt-BR' },

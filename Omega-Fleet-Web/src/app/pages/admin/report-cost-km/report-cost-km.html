@@ -2,7 +2,7 @@
   <header class="report-header">
     <div>
       <h2>Custo por KM por Veiculo</h2>
-      <p>Somatorio de despesas de viagem e do proprio veiculo dividido pelos KM rodados.</p>
+      <p>Grafico mensal empilhado de {{ reportYear }}, usando a data de fechamento das viagens para consolidar o custo por KM por tipo de despesa.</p>
     </div>
     <button class="btn-refresh" (click)="load()" [disabled]="loading">Atualizar</button>
   </header>
@@ -11,30 +11,90 @@
 
   <div class="loading" *ngIf="loading">Carregando relatorio...</div>
 
-  <div class="table-card" *ngIf="!loading">
-    <table *ngIf="rows.length > 0">
-      <thead>
-        <tr>
-          <th>Placa</th>
-          <th>Veiculo</th>
-          <th>KM Rodado</th>
-          <th>Despesa Total</th>
-          <th>Custo por KM</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let row of rows">
-          <td class="bold">{{ row.licensePlate }}</td>
-          <td>{{ row.manufacturer }}</td>
-          <td>{{ row.totalKm | number:'1.2-2':'pt-BR' }}</td>
-          <td>{{ row.totalExpense | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
-          <td>{{ row.costPerKm | currency:'BRL':'symbol':'1.2-4':'pt-BR' }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="empty" *ngIf="rows.length === 0">
-      Nenhum dado de custo por KM encontrado para os veiculos da empresa.
-    </div>
+  <div class="empty" *ngIf="!loading && rows.length === 0">
+    Nenhum dado de custo por KM encontrado para os veiculos da empresa em {{ reportYear }}.
   </div>
+
+  <ng-container *ngIf="!loading && selectedVehicle">
+    <section class="toolbar-card">
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label for="yearFilter">Ano</label>
+          <select id="yearFilter" [(ngModel)]="reportYear" (ngModelChange)="load()">
+            <option *ngFor="let year of availableYears" [ngValue]="year">
+              {{ year }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="vehicleFilter">Veiculo</label>
+          <select id="vehicleFilter" [(ngModel)]="selectedVehicleId">
+            <option [value]="activeAverageOption">Media dos veiculos ativos</option>
+            <option *ngFor="let row of rows" [value]="row.vehicleId">
+              {{ row.licensePlate }} - {{ row.manufacturer }}{{ row.isActive ? '' : ' (Inativo)' }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="label">Veiculo</span>
+        <strong>{{ selectedVehicle.licensePlate }}</strong>
+        <small>{{ selectedVehicle.manufacturer }}</small>
+      </article>
+      <article class="summary-card">
+        <span class="label">KM no Ano</span>
+        <strong>{{ selectedVehicleAnnualKm | number:'1.2-2':'pt-BR' }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="label">Despesa no Ano</span>
+        <strong>{{ selectedVehicleAnnualExpense | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+      </article>
+      <article class="summary-card accent">
+        <span class="label">Media Anual</span>
+        <strong>{{ selectedVehicle.annualAverageCostPerKm | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+      </article>
+    </section>
+
+    <section class="chart-card">
+      <div class="chart-header">
+        <div>
+          <h3>Custo por KM por Mes</h3>
+          <p>As barras empilhadas representam o custo por KM de cada mes, separado por tipo de despesa, para o contexto selecionado.</p>
+        </div>
+        <div class="legend" *ngIf="expenseTypeLegend.length > 0">
+          <span class="legend-title">Tipos de despesa</span>
+          <span class="legend-item" *ngFor="let item of expenseTypeLegend">
+            <span class="legend-dot" [style.background]="item.color"></span>
+            <span>{{ item.name }}</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="chart-area">
+        <apx-chart
+          *ngIf="isBrowser && chartVisible"
+          [series]="chartOptions.series!"
+          [chart]="chartOptions.chart!"
+          [xaxis]="chartOptions.xaxis!"
+          [yaxis]="chartOptions.yaxis!"
+          [dataLabels]="chartOptions.dataLabels!"
+          [plotOptions]="chartOptions.plotOptions!"
+          [grid]="chartOptions.grid!"
+          [tooltip]="chartOptions.tooltip!"
+          [legend]="chartOptions.legend!"
+          [stroke]="chartOptions.stroke!"
+          [fill]="chartOptions.fill!"
+          [colors]="chartOptions.colors!">
+        </apx-chart>
+
+        <div class="empty" *ngIf="expenseTypeLegend.length === 0">
+          Nao ha tipos de despesa suficientes para montar a quebra colorida neste contexto.
+        </div>
+      </div>
+    </section>
+  </ng-container>
 </section>

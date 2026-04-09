@@ -145,8 +145,13 @@
           color: #fff;
         }
 
-        &.status-closed {
+        &.status-finished {
           background-color: #64748b;
+          color: #fff;
+        }
+
+        &.status-cancelled {
+          background-color: #dc2626;
           color: #fff;
         }
       }

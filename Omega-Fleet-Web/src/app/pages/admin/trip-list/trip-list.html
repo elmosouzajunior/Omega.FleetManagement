@@ -12,7 +12,8 @@
         <label>Filtrar por Status:</label>
         <select [(ngModel)]="filterStatus" (change)="applyFilters()">
           <option value="Open">Abertas</option>
-          <option value="Closed">Encerradas</option>
+          <option value="Finished">Encerradas</option>
+          <option value="Cancelled">Canceladas</option>
           <option value="Todas">Todas</option>
         </select>
       </div>
@@ -41,8 +42,8 @@
           <td>{{ trip.vehicleLicensePlate }} - {{ trip.vehicleManufacturer }}</td>
           <td class="text">{{ trip.freightValue | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
           <td>
-            <span class="badge" [ngClass]="isTripOpen(trip) ? 'status-open' : 'status-closed'">
-              {{ isTripOpen(trip) ? 'ABERTA' : 'ENCERRADA' }}
+            <span class="badge" [ngClass]="getTripStatusClass(trip)">
+              {{ getTripStatusLabel(trip) }}
             </span>
           </td>
           <td style="text-align: right;">

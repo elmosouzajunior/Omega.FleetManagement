@@ -58,7 +58,7 @@ const routes: Routes = [
        { path: 'trip-detail/:id', component: TripDetailComponent },
        { path: 'trip-expenses/new', component: TripExpenseCreateComponent },
        { path: 'vehicle-expenses/new', component: VehicleExpenseCreateComponent },
-       { path: 'reports', component: ReportCostKmComponent },
+       { path: 'reports', component: ReportCostKmComponent, data: { RenderMode: 'browser' }},
        { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
        // ... outras rotas do Admin da Empresa
     ]

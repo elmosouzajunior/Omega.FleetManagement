@@ -18,7 +18,7 @@
       <div class="header-actions">
         <button class="btn-secondary" (click)="goBack()">Voltar</button>
         <button class="btn-primary" *ngIf="isTripOpen" (click)="openEditOpeningModal()">Editar Abertura</button>
-        <button class="btn-primary" (click)="launchExpense()" [disabled]="isTripClosed">Lançar Despesa</button>
+        <button class="btn-primary" (click)="launchExpense()" [disabled]="isTripClosed || isTripCancelled">Lançar Despesa</button>
         <button class="btn-primary success" *ngIf="isTripOpen" (click)="openFinishModal()" [disabled]="!hasLoadedWeight">Finalizar</button>
         <button class="btn-primary warning" *ngIf="isTripClosed" (click)="reopenTrip()" [disabled]="reopeningTrip">
           {{ reopeningTrip ? 'Reabrindo...' : 'Reabrir Viagem' }}
@@ -30,8 +30,8 @@
     <section class="stats-grid">
       <article class="stat-card">
         <span class="label">Status</span>
-        <strong [class.open]="isTripOpen" [class.closed]="isTripClosed">
-          {{ isTripOpen ? 'ABERTA' : 'ENCERRADA' }}
+        <strong [class.open]="isTripOpen" [class.closed]="isTripClosed" [class.cancelled]="isTripCancelled">
+          {{ tripStatusLabel }}
         </strong>
       </article>
       <article class="stat-card">
@@ -106,7 +106,7 @@
 
       <article class="panel">
         <h2>Fechamento</h2>
-        <div *ngIf="isTripClosed; else openTripState">
+        <div *ngIf="isTripClosed; else tripNotFinishedState">
           <div class="line-item">
             <span>Data de Descarga</span>
             <strong>{{ trip.unloadingDate | date:'dd/MM/yyyy HH:mm' }}</strong>
@@ -144,6 +144,9 @@
             <strong>{{ trip.receiptDocumentTypeName || '-' }}</strong>
           </div>
         </div>
+        <ng-template #tripNotFinishedState>
+          <p class="open-state" *ngIf="isTripCancelled; else openTripState">A viagem foi cancelada e nao possui dados de encerramento.</p>
+        </ng-template>
         <ng-template #openTripState>
           <p class="open-state">A viagem esta em andamento. Finalize quando chegar ao destino.</p>
         </ng-template>
@@ -153,7 +156,7 @@
     <section class="panel expenses-panel">
       <div class="panel-header">
         <h2>Despesas da Viagem</h2>
-        <button class="btn-primary" (click)="launchExpense()" [disabled]="isTripClosed">Nova despesa</button>
+        <button class="btn-primary" (click)="launchExpense()" [disabled]="isTripClosed || isTripCancelled">Nova despesa</button>
       </div>
 
       <div *ngIf="expenses.length === 0" class="empty-state">

@@ -4,8 +4,8 @@ namespace Omega.FleetManagement.Application.DTOs
         Guid VehicleId,
         string LicensePlate,
         string Manufacturer,
-        decimal TotalKm,
-        decimal TotalExpense,
-        decimal CostPerKm
+        bool IsActive,
+        List<VehicleCostPerKmMonthlyMetricDto> Months,
+        decimal AnnualAverageCostPerKm
     );
 }

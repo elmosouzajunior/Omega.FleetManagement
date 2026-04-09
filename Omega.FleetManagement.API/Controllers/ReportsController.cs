@@ -17,12 +17,12 @@ namespace Omega.FleetManagement.API.Controllers
         }
 
         [HttpGet("cost-per-km")]
-        public async Task<IActionResult> GetCostPerKmByVehicle()
+        public async Task<IActionResult> GetCostPerKmByVehicle([FromQuery] int? year = null)
         {
             if (!Guid.TryParse(User.FindFirst("CompanyId")?.Value, out var companyId))
                 return Unauthorized(new { message = "CompanyId inválido no token." });
 
-            var result = await _reportAppService.GetVehicleCostPerKmAsync(companyId);
+            var result = await _reportAppService.GetVehicleCostPerKmAsync(companyId, year);
             return Ok(result);
         }
     }

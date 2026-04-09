@@ -4,6 +4,6 @@ namespace Omega.FleetManagement.Application.Interfaces
 {
     public interface IReportAppService
     {
-        Task<List<VehicleCostPerKmReportItemDto>> GetVehicleCostPerKmAsync(Guid companyId);
+        Task<VehicleCostPerKmReportDto> GetVehicleCostPerKmAsync(Guid companyId, int? year = null);
     }
 }

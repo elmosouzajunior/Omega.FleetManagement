@@ -698,26 +698,47 @@ export class TripDetailComponent implements OnInit {
   }
 
   get isTripOpen(): boolean {
-    if (!this.trip) return false;
-
-    if (typeof this.trip.status === 'string') {
-      const normalized = this.trip.status.toLowerCase();
-      return normalized === 'open' || normalized === 'aberta';
-    }
-
-    if (typeof this.trip.status === 'number') {
-      return this.trip.status === 1;
-    }
-
-    if (typeof this.trip.unloadingDate === 'string') {
-      return this.trip.unloadingDate.startsWith('0001') || this.trip.unloadingDate.trim() === '';
-    }
-
-    return !this.trip.unloadingDate;
+    return this.tripStatus === 'Open';
   }
 
   get isTripClosed(): boolean {
-    return !this.isTripOpen;
+    return this.tripStatus === 'Finished';
+  }
+
+  get isTripCancelled(): boolean {
+    return this.tripStatus === 'Cancelled';
+  }
+
+  get tripStatus(): 'Open' | 'Finished' | 'Cancelled' {
+    if (!this.trip) return 'Finished';
+
+    if (typeof this.trip.status === 'string') {
+      const normalized = this.trip.status.trim().toLowerCase();
+
+      if (normalized === 'open' || normalized === 'aberta') return 'Open';
+      if (normalized === 'finished' || normalized === 'encerrada') return 'Finished';
+      if (normalized === 'cancelled' || normalized === 'canceled' || normalized === 'cancelada') return 'Cancelled';
+    }
+
+    if (typeof this.trip.status === 'number') {
+      if (this.trip.status === 1) return 'Open';
+      if (this.trip.status === 3) return 'Cancelled';
+      return 'Finished';
+    }
+
+    if (typeof this.trip.unloadingDate === 'string') {
+      return this.trip.unloadingDate.startsWith('0001') || this.trip.unloadingDate.trim() === ''
+        ? 'Open'
+        : 'Finished';
+    }
+
+    return this.trip.unloadingDate ? 'Finished' : 'Open';
+  }
+
+  get tripStatusLabel(): string {
+    if (this.tripStatus === 'Open') return 'ABERTA';
+    if (this.tripStatus === 'Cancelled') return 'CANCELADA';
+    return 'ENCERRADA';
   }
 
   private nowLocalDate(): string {
