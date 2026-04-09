@@ -17,6 +17,7 @@ export class VehicleListComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private tripService = inject(TripService);
   private router = inject(Router);
+  private readonly fixedCostCategory = 1;
 
   allVehicles: Vehicle[] = [];
   filteredVehicles: Vehicle[] = [];
@@ -171,7 +172,8 @@ export class VehicleListComponent implements OnInit {
     if (this.expenseTypes.length === 0) {
       this.tripService.getExpenseTypes().subscribe({
         next: (res: any) => {
-          this.expenseTypes = res?.data || res?.$values || (Array.isArray(res) ? res : []);
+          const data = res?.data || res?.$values || (Array.isArray(res) ? res : []);
+          this.expenseTypes = this.filterExpenseTypesByCategory(data, this.fixedCostCategory);
           this.cdr.detectChanges();
         },
         error: () => {
@@ -273,5 +275,11 @@ export class VehicleListComponent implements OnInit {
     const pricePerLiter = Number(this.vehicleExpenseForm.pricePerLiter || 0);
     if (liters <= 0 || pricePerLiter <= 0) return null;
     return Number((liters * pricePerLiter).toFixed(2));
+  }
+
+  private filterExpenseTypesByCategory(items: any[], costCategory: number): any[] {
+    return (items || []).filter((item: any) =>
+      Number(item?.costCategory ?? item?.CostCategory ?? 2) === costCategory
+    );
   }
 }

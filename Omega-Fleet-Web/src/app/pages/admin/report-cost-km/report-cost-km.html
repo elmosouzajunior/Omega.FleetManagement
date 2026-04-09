@@ -2,7 +2,7 @@
   <header class="report-header">
     <div>
       <h2>Custo por KM por Veiculo</h2>
-      <p>Grafico mensal empilhado de {{ reportYear }}, usando a data de fechamento das viagens para consolidar o custo por KM por tipo de despesa.</p>
+      <p>Grafico mensal empilhado de {{ reportYear }}, usando a data de fechamento das viagens para consolidar o custo por KM variavel por tipo de despesa.</p>
     </div>
     <button class="btn-refresh" (click)="load()" [disabled]="loading">Atualizar</button>
   </header>
@@ -30,9 +30,19 @@
         <div class="filter-group">
           <label for="vehicleFilter">Veiculo</label>
           <select id="vehicleFilter" [(ngModel)]="selectedVehicleId">
-            <option [value]="activeAverageOption">Media dos veiculos ativos</option>
+            <option [value]="activeAverageOption">Todos</option>
             <option *ngFor="let row of rows" [value]="row.vehicleId">
               {{ row.licensePlate }} - {{ row.manufacturer }}{{ row.isActive ? '' : ' (Inativo)' }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="expenseTypeFilter">Tipo de Despesa</label>
+          <select id="expenseTypeFilter" [(ngModel)]="selectedExpenseTypeName" (ngModelChange)="onExpenseTypeChange()">
+            <option [value]="allExpenseTypesOption">Todos os tipos</option>
+            <option *ngFor="let expenseTypeName of expenseTypeNames" [value]="expenseTypeName">
+              {{ expenseTypeName }}
             </option>
           </select>
         </div>
@@ -55,7 +65,7 @@
       </article>
       <article class="summary-card accent">
         <span class="label">Media Anual</span>
-        <strong>{{ selectedVehicle.annualAverageCostPerKm | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+        <strong>{{ selectedVehicleAnnualAverageCostPerKm | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
       </article>
     </section>
 
@@ -63,7 +73,7 @@
       <div class="chart-header">
         <div>
           <h3>Custo por KM por Mes</h3>
-          <p>As barras empilhadas representam o custo por KM de cada mes, separado por tipo de despesa, para o contexto selecionado.</p>
+          <p>As barras empilhadas representam o custo por KM variavel de cada mes, separado por tipo de despesa, para o contexto selecionado.</p>
         </div>
         <div class="legend" *ngIf="expenseTypeLegend.length > 0">
           <span class="legend-title">Tipos de despesa</span>

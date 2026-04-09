@@ -34,6 +34,7 @@ import { ExpenseTypeListComponent } from './pages/master/expense-type-list/expen
 import { ProductListComponent } from './pages/master/product-list/product-list';
 import { ReceiptDocumentTypeListComponent } from './pages/master/receipt-document-type-list/receipt-document-type-list';
 import { ReportCostKmComponent } from './pages/admin/report-cost-km/report-cost-km';
+import { ReportProfitVehicleComponent } from './pages/admin/report-profit-vehicle/report-profit-vehicle';
 
 registerLocaleData(localePt, 'pt-BR');
 
@@ -59,6 +60,7 @@ registerLocaleData(localePt, 'pt-BR');
     TripExpenseCreateComponent,
     VehicleExpenseCreateComponent,
     ReportCostKmComponent,
+    ReportProfitVehicleComponent,
     ExpenseTypeListComponent,
     ProductListComponent,
     ReceiptDocumentTypeListComponent,

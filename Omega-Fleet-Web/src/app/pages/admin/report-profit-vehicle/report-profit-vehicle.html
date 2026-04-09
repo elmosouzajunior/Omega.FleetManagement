@@ -1,0 +1,78 @@
+<section class="report-wrapper">
+  <header class="report-header">
+    <div>
+      <h2>Lucro por Veiculo</h2>
+      <p>Ranking anual por veiculo, considerando frete fechado menos despesas de viagem, despesas do veiculo, comissao do motorista e seguro da carga.</p>
+    </div>
+    <button class="btn-refresh" (click)="load()" [disabled]="loading">Atualizar</button>
+  </header>
+
+  <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <div class="loading" *ngIf="loading">Carregando relatorio...</div>
+
+  <div class="empty" *ngIf="!loading && rows.length === 0">
+    Nenhum dado de lucro por veiculo encontrado para {{ reportYear }}.
+  </div>
+
+  <ng-container *ngIf="!loading && rows.length > 0">
+    <section class="toolbar-card">
+      <div class="filters-grid single-filter">
+        <div class="filter-group">
+          <label for="profitYearFilter">Ano</label>
+          <select id="profitYearFilter" [(ngModel)]="reportYear" (ngModelChange)="load()">
+            <option *ngFor="let year of availableYears" [ngValue]="year">
+              {{ year }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="label">Receita no Ano</span>
+        <strong>{{ totalRevenue | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="label">Custo no Ano</span>
+        <strong>{{ totalExpense | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+      </article>
+      <article class="summary-card accent">
+        <span class="label">Lucro Liquido</span>
+        <strong>{{ totalProfit | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="label">Veiculos com Lucro</span>
+        <strong>{{ profitableVehicles }}</strong>
+        <small>de {{ rows.length }} veiculos</small>
+      </article>
+    </section>
+
+    <section class="chart-card">
+      <div class="chart-header">
+        <div>
+          <h3>Lucro Liquido por Veiculo</h3>
+          <p>Barras horizontais para comparar rapidamente os veiculos mais rentaveis e os que estao consumindo margem no ano selecionado.</p>
+        </div>
+      </div>
+
+      <div class="chart-area">
+        <apx-chart
+          *ngIf="isBrowser && chartVisible"
+          [series]="chartOptions.series!"
+          [chart]="chartOptions.chart!"
+          [xaxis]="chartOptions.xaxis!"
+          [yaxis]="chartOptions.yaxis!"
+          [dataLabels]="chartOptions.dataLabels!"
+          [plotOptions]="chartOptions.plotOptions!"
+          [grid]="chartOptions.grid!"
+          [tooltip]="chartOptions.tooltip!"
+          [legend]="chartOptions.legend!"
+          [fill]="chartOptions.fill!"
+          [colors]="chartOptions.colors!">
+        </apx-chart>
+      </div>
+    </section>
+  </ng-container>
+</section>

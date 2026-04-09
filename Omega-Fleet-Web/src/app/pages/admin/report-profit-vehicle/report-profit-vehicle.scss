@@ -55,8 +55,11 @@
 
 .filters-grid {
   display: grid;
-  grid-template-columns: 160px minmax(240px, 320px) minmax(240px, 320px);
   gap: 14px;
+}
+
+.single-filter {
+  grid-template-columns: 160px;
 }
 
 .filter-group {
@@ -98,8 +101,8 @@
 }
 
 .summary-card.accent {
-  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
-  border-color: #93c5fd;
+  background: linear-gradient(180deg, #ecfdf5 0%, #dcfce7 100%);
+  border-color: #86efac;
 }
 
 .summary-card .label {
@@ -139,37 +142,6 @@
   font-size: 0.92rem;
 }
 
-.legend {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 10px 14px;
-  color: #334155;
-  font-weight: 600;
-}
-
-.legend-title {
-  color: #475569;
-  font-size: 0.82rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-}
-
-.legend-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
-}
-
 .chart-area {
   min-height: 420px;
 }
@@ -186,10 +158,7 @@
     flex-direction: column;
   }
 
-  .filters-grid {
-    grid-template-columns: 1fr;
-  }
-
+  .single-filter,
   .summary-grid {
     grid-template-columns: 1fr;
   }

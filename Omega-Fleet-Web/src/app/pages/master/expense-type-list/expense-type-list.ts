@@ -9,6 +9,8 @@ type ExpenseTypeRow = {
   companyId: string;
   name: string;
   description: string | null;
+  costCategory: number;
+  costCategoryLabel: string;
   isActive: boolean;
 };
 
@@ -26,13 +28,19 @@ export class ExpenseTypeListComponent implements OnInit {
 
   selectedCompanyId = '';
   showInactive = true;
+  readonly costCategoryOptions = [
+    { value: 1, label: 'Fixo' },
+    { value: 2, label: 'Variavel' }
+  ];
 
   name = '';
   description = '';
+  costCategory = 2;
 
   editingType: ExpenseTypeRow | null = null;
   editName = '';
   editDescription = '';
+  editCostCategory = 2;
 
   loadingCompanies = false;
   loadingTypes = false;
@@ -132,7 +140,8 @@ export class ExpenseTypeListComponent implements OnInit {
     this.expenseTypeService.createExpenseType({
       companyId: this.selectedCompanyId,
       name: trimmedName,
-      description: (this.description || '').trim() || null
+      description: (this.description || '').trim() || null,
+      costCategory: this.costCategory
     }).pipe(
       finalize(() => {
         this.saving = false;
@@ -144,6 +153,7 @@ export class ExpenseTypeListComponent implements OnInit {
         const createdItem = res?.data ? this.mapExpenseType(res.data) : this.buildOptimisticExpenseType(trimmedName);
         this.name = '';
         this.description = '';
+        this.costCategory = 2;
         this.expenseTypes = this.sortExpenseTypes([
           createdItem,
           ...this.expenseTypes.filter((item) => item.id !== createdItem.id)
@@ -160,6 +170,7 @@ export class ExpenseTypeListComponent implements OnInit {
     this.editingType = { ...type };
     this.editName = type.name;
     this.editDescription = type.description || '';
+    this.editCostCategory = type.costCategory;
     this.errorMessage = '';
     this.successMessage = '';
   }
@@ -168,6 +179,7 @@ export class ExpenseTypeListComponent implements OnInit {
     this.editingType = null;
     this.editName = '';
     this.editDescription = '';
+    this.editCostCategory = 2;
   }
 
   saveEdit(): void {
@@ -184,7 +196,8 @@ export class ExpenseTypeListComponent implements OnInit {
 
     this.expenseTypeService.updateExpenseType(this.editingType.id, {
       name: trimmedName,
-      description: (this.editDescription || '').trim() || null
+      description: (this.editDescription || '').trim() || null,
+      costCategory: this.editCostCategory
     }).pipe(
       finalize(() => {
         this.savingEdit = false;
@@ -198,7 +211,9 @@ export class ExpenseTypeListComponent implements OnInit {
             ? {
                 ...item,
                 name: trimmedName,
-                description: (this.editDescription || '').trim() || null
+                description: (this.editDescription || '').trim() || null,
+                costCategory: this.editCostCategory,
+                costCategoryLabel: this.getCostCategoryLabel(this.editCostCategory)
               }
             : item
         ));
@@ -242,11 +257,15 @@ export class ExpenseTypeListComponent implements OnInit {
   }
 
   private mapExpenseType(item: any): ExpenseTypeRow {
+    const costCategory = Number(item.costCategory ?? item.CostCategory ?? 2);
+
     return {
       id: item.id || item.Id,
       companyId: item.companyId || item.CompanyId,
       name: item.name || item.Name,
       description: item.description || item.Description || null,
+      costCategory,
+      costCategoryLabel: item.costCategoryLabel || item.CostCategoryLabel || this.getCostCategoryLabel(costCategory),
       isActive: item.isActive ?? item.IsActive ?? false
     };
   }
@@ -257,8 +276,14 @@ export class ExpenseTypeListComponent implements OnInit {
       companyId: this.selectedCompanyId,
       name,
       description: (this.description || '').trim() || null,
+      costCategory: this.costCategory,
+      costCategoryLabel: this.getCostCategoryLabel(this.costCategory),
       isActive: true
     };
+  }
+
+  private getCostCategoryLabel(value: number): string {
+    return this.costCategoryOptions.find((option) => option.value === value)?.label || 'Variavel';
   }
 
   private sortExpenseTypes(items: ExpenseTypeRow[]): ExpenseTypeRow[] {

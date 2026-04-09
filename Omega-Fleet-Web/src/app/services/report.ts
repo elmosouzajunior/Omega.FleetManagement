@@ -22,6 +22,7 @@ export interface VehicleCostPerKmMonthlyMetric {
 
 export interface VehicleCostPerKmExpenseTypeMetric {
   expenseTypeName: string;
+  costCategory: number;
   totalExpense: number;
   costPerKm: number;
 }
@@ -30,6 +31,26 @@ export interface VehicleCostPerKmReportResponse {
   year: number;
   availableYears: number[];
   items: VehicleCostPerKmItem[];
+}
+
+export interface VehicleProfitItem {
+  vehicleId: string;
+  licensePlate: string;
+  manufacturer: string;
+  isActive: boolean;
+  revenue: number;
+  tripExpense: number;
+  directExpense: number;
+  commissionExpense: number;
+  cargoInsuranceExpense: number;
+  totalExpense: number;
+  netProfit: number;
+}
+
+export interface VehicleProfitReportResponse {
+  year: number;
+  availableYears: number[];
+  items: VehicleProfitItem[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -41,5 +62,10 @@ export class ReportService {
   getVehicleCostPerKm(year?: number): Observable<VehicleCostPerKmReportResponse> {
     const query = typeof year === 'number' ? `?year=${year}` : '';
     return this.http.get<VehicleCostPerKmReportResponse>(`${this.apiUrl}/cost-per-km${query}`);
+  }
+
+  getVehicleProfit(year?: number): Observable<VehicleProfitReportResponse> {
+    const query = typeof year === 'number' ? `?year=${year}` : '';
+    return this.http.get<VehicleProfitReportResponse>(`${this.apiUrl}/profit-by-vehicle${query}`);
   }
 }

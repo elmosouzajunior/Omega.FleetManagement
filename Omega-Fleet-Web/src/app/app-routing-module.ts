@@ -23,6 +23,7 @@ import { ExpenseTypeListComponent } from './pages/master/expense-type-list/expen
 import { ProductListComponent } from './pages/master/product-list/product-list';
 import { ReceiptDocumentTypeListComponent } from './pages/master/receipt-document-type-list/receipt-document-type-list';
 import { ReportCostKmComponent } from './pages/admin/report-cost-km/report-cost-km';
+import { ReportProfitVehicleComponent } from './pages/admin/report-profit-vehicle/report-profit-vehicle';
 
 
 const routes: Routes = [
@@ -58,7 +59,9 @@ const routes: Routes = [
        { path: 'trip-detail/:id', component: TripDetailComponent },
        { path: 'trip-expenses/new', component: TripExpenseCreateComponent },
        { path: 'vehicle-expenses/new', component: VehicleExpenseCreateComponent },
-       { path: 'reports', component: ReportCostKmComponent, data: { RenderMode: 'browser' }},
+       { path: 'reports', redirectTo: 'reports/cost-km', pathMatch: 'full' },
+       { path: 'reports/cost-km', component: ReportCostKmComponent, data: { RenderMode: 'browser' }},
+       { path: 'reports/profit-vehicle', component: ReportProfitVehicleComponent, data: { RenderMode: 'browser' }},
        { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
        // ... outras rotas do Admin da Empresa
     ]

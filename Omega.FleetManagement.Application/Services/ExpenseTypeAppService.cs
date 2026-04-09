@@ -1,6 +1,7 @@
 using Omega.FleetManagement.Application.DTOs;
 using Omega.FleetManagement.Application.Interfaces;
 using Omega.FleetManagement.Domain.Entities;
+using Omega.FleetManagement.Domain.Enums;
 using Omega.FleetManagement.Domain.Interfaces;
 
 namespace Omega.FleetManagement.Application.Services
@@ -36,6 +37,8 @@ namespace Omega.FleetManagement.Application.Services
                 CompanyId = t.CompanyId,
                 Name = t.Name,
                 Description = t.Description,
+                CostCategory = (int)t.CostCategory,
+                CostCategoryLabel = GetCostCategoryLabel(t.CostCategory),
                 IsActive = t.IsActive
             }).ToList();
         }
@@ -48,11 +51,18 @@ namespace Omega.FleetManagement.Application.Services
             if (string.IsNullOrWhiteSpace(request.Name))
                 throw new ArgumentException("Nome do tipo de despesa e obrigatorio.");
 
+            if (!Enum.IsDefined(typeof(ExpenseCostCategory), request.CostCategory))
+                throw new ArgumentException("Categoria de custo invalida.");
+
             var companyExists = _companyRepository.GetAllQueryable().Any(c => c.Id == request.CompanyId);
             if (!companyExists)
                 throw new ArgumentException("Empresa nao encontrada.");
 
-            var expenseType = new ExpenseType(request.CompanyId, request.Name.Trim(), request.Description?.Trim());
+            var expenseType = new ExpenseType(
+                request.CompanyId,
+                request.Name.Trim(),
+                (ExpenseCostCategory)request.CostCategory,
+                request.Description?.Trim());
             await _expenseTypeRepository.AddAsync(expenseType);
             await _uow.CommitAsync();
 
@@ -62,6 +72,8 @@ namespace Omega.FleetManagement.Application.Services
                 CompanyId = expenseType.CompanyId,
                 Name = expenseType.Name,
                 Description = expenseType.Description,
+                CostCategory = (int)expenseType.CostCategory,
+                CostCategoryLabel = GetCostCategoryLabel(expenseType.CostCategory),
                 IsActive = expenseType.IsActive
             };
         }
@@ -71,12 +83,16 @@ namespace Omega.FleetManagement.Application.Services
             if (string.IsNullOrWhiteSpace(request.Name))
                 throw new ArgumentException("Nome do tipo de despesa e obrigatorio.");
 
+            if (!Enum.IsDefined(typeof(ExpenseCostCategory), request.CostCategory))
+                throw new ArgumentException("Categoria de custo invalida.");
+
             var expenseType = await _expenseTypeRepository.GetByIdAsync(id, includeInactive: true);
             if (expenseType == null)
                 return false;
 
             expenseType.SetName(request.Name.Trim());
             expenseType.UpdateDescription(request.Description?.Trim());
+            expenseType.SetCostCategory((ExpenseCostCategory)request.CostCategory);
 
             await _uow.CommitAsync();
             return true;
@@ -95,6 +111,16 @@ namespace Omega.FleetManagement.Application.Services
 
             await _uow.CommitAsync();
             return true;
+        }
+
+        private static string GetCostCategoryLabel(ExpenseCostCategory costCategory)
+        {
+            return costCategory switch
+            {
+                ExpenseCostCategory.Fixed => "Fixo",
+                ExpenseCostCategory.Variable => "Variavel",
+                _ => "Nao definido"
+            };
         }
     }
 }

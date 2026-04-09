@@ -44,12 +44,15 @@ export class ReportCostKmComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly cdr = inject(ChangeDetectorRef);
   readonly activeAverageOption = 'active-average';
+  readonly allExpenseTypesOption = 'all-expense-types';
+  readonly variableCostCategory = 2;
 
   readonly monthLabels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   rows: VehicleCostPerKmItem[] = [];
   reportYear = new Date().getFullYear();
   availableYears: number[] = [];
   selectedVehicleId = this.activeAverageOption;
+  selectedExpenseTypeName = this.allExpenseTypesOption;
   isBrowser = false;
   chartVisible = false;
   loading = false;
@@ -89,6 +92,7 @@ export class ReportCostKmComponent implements OnInit {
         this.availableYears = normalized.availableYears;
         this.rows = normalized.items;
         this.ensureSelectedVehicle();
+        this.ensureSelectedExpenseType();
         this.loading = false;
         this.refreshChart();
       },
@@ -103,7 +107,7 @@ export class ReportCostKmComponent implements OnInit {
     });
   }
 
-  private refreshChart(): void {
+  refreshChart(): void {
     this.chartVisible = false;
     this.cdr.detectChanges();
 
@@ -111,6 +115,10 @@ export class ReportCostKmComponent implements OnInit {
       this.chartVisible = true;
       this.cdr.detectChanges();
     }, 0);
+  }
+
+  onExpenseTypeChange(): void {
+    this.refreshChart();
   }
 
   private normalizeReportResponse(data: any): { year: number; availableYears: number[]; items: VehicleCostPerKmItem[] } {
@@ -136,6 +144,7 @@ export class ReportCostKmComponent implements OnInit {
                 expenseTypes: Array.isArray(month?.expenseTypes ?? month?.ExpenseTypes)
                   ? (month?.expenseTypes ?? month?.ExpenseTypes).map((expenseType: any) => ({
                       expenseTypeName: String(expenseType?.expenseTypeName ?? expenseType?.ExpenseTypeName ?? 'Sem Tipo'),
+                      costCategory: Number(expenseType?.costCategory ?? expenseType?.CostCategory ?? this.variableCostCategory),
                       totalExpense: Number(expenseType?.totalExpense ?? expenseType?.TotalExpense ?? 0),
                       costPerKm: Number(expenseType?.costPerKm ?? expenseType?.CostPerKm ?? 0)
                     }))
@@ -161,6 +170,16 @@ export class ReportCostKmComponent implements OnInit {
     const existingVehicle = this.rows.find(row => row.vehicleId === this.selectedVehicleId);
     if (!existingVehicle) {
       this.selectedVehicleId = this.activeAverageOption;
+    }
+  }
+
+  private ensureSelectedExpenseType(): void {
+    if (this.selectedExpenseTypeName === this.allExpenseTypesOption) {
+      return;
+    }
+
+    if (!this.expenseTypeNames.includes(this.selectedExpenseTypeName)) {
+      this.selectedExpenseTypeName = this.allExpenseTypesOption;
     }
   }
 
@@ -223,11 +242,15 @@ export class ReportCostKmComponent implements OnInit {
   }
 
   private mergeExpenseTypes(metrics: VehicleCostPerKmMonthlyMetric[]): VehicleCostPerKmExpenseTypeMetric[] {
-    const map = new Map<string, { totalExpense: number; costPerKm: number }>();
+    const map = new Map<string, { costCategory: number; totalExpense: number; costPerKm: number }>();
 
     for (const metric of metrics) {
       for (const expenseType of metric.expenseTypes ?? []) {
-        const current = map.get(expenseType.expenseTypeName) ?? { totalExpense: 0, costPerKm: 0 };
+        const current = map.get(expenseType.expenseTypeName) ?? {
+          costCategory: Number(expenseType.costCategory ?? this.variableCostCategory),
+          totalExpense: 0,
+          costPerKm: 0
+        };
         current.totalExpense += Number(expenseType.totalExpense || 0);
         current.costPerKm += Number(expenseType.costPerKm || 0);
         map.set(expenseType.expenseTypeName, current);
@@ -238,6 +261,7 @@ export class ReportCostKmComponent implements OnInit {
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([expenseTypeName, values]) => ({
         expenseTypeName,
+        costCategory: Number(values.costCategory || this.variableCostCategory),
         totalExpense: Number(values.totalExpense.toFixed(2)),
         costPerKm: Number(values.costPerKm.toFixed(4))
       }));
@@ -248,12 +272,18 @@ export class ReportCostKmComponent implements OnInit {
   }
 
   get selectedVehicleAnnualExpense(): number {
-    return this.selectedVehicle?.months?.reduce((sum, item) => sum + Number(item.totalExpense || 0), 0) ?? 0;
+    return this.selectedVehicle?.months?.reduce((sum, item) => sum + this.getFilteredMonthExpense(item), 0) ?? 0;
+  }
+
+  get selectedVehicleAnnualAverageCostPerKm(): number {
+    const totalKm = this.selectedVehicleAnnualKm;
+    const totalExpense = this.selectedVehicleAnnualExpense;
+    return totalKm > 0 ? totalExpense / totalKm : 0;
   }
 
   get selectedVehicleMaxCostPerKm(): number {
     const maxValue = this.selectedVehicle?.months?.reduce((max, item) => {
-      const value = Number(item.costPerKm || 0);
+      const value = this.getFilteredMonthCostPerKm(item);
       return value > max ? value : max;
     }, 0) ?? 0;
 
@@ -269,27 +299,66 @@ export class ReportCostKmComponent implements OnInit {
     const monthlyData = this.monthLabels.map((_, index) => this.getMonthData(vehicle, index + 1));
 
     return Array.from(new Set(
-      monthlyData.flatMap(item => (item.expenseTypes ?? []).map(expenseType => expenseType.expenseTypeName))
-    ));
+      monthlyData.flatMap(item => (item.expenseTypes ?? [])
+        .filter(expenseType => Number(expenseType.costCategory || this.variableCostCategory) === this.variableCostCategory)
+        .map(expenseType => expenseType.expenseTypeName))
+    )).sort((a, b) => a.localeCompare(b));
+  }
+
+  get filteredExpenseTypeNames(): string[] {
+    if (this.selectedExpenseTypeName === this.allExpenseTypesOption) {
+      return this.expenseTypeNames;
+    }
+
+    return this.expenseTypeNames.filter(name => name === this.selectedExpenseTypeName);
   }
 
   get expenseTypeLegend(): { name: string; color: string }[] {
-    return this.expenseTypeNames.map((name, index) => ({
+    return this.filteredExpenseTypeNames.map((name, index) => ({
       name,
-      color: this.expenseTypePalette[index % this.expenseTypePalette.length]
+      color: this.getExpenseTypeColor(name, index)
     }));
+  }
+
+  private getExpenseTypeColor(name: string, fallbackIndex: number): string {
+    const sourceIndex = this.expenseTypeNames.indexOf(name);
+    const paletteIndex = sourceIndex >= 0 ? sourceIndex : fallbackIndex;
+    return this.expenseTypePalette[paletteIndex % this.expenseTypePalette.length];
+  }
+
+  private getFilteredMonthExpense(month: VehicleCostPerKmMonthlyMetric): number {
+    return (month.expenseTypes ?? [])
+      .filter(item => this.isVariableExpense(item) && this.matchesExpenseTypeFilter(item))
+      .reduce((sum, item) => sum + Number(item.totalExpense || 0), 0);
+  }
+
+  private getFilteredMonthCostPerKm(month: VehicleCostPerKmMonthlyMetric): number {
+    return (month.expenseTypes ?? [])
+      .filter(item => this.isVariableExpense(item) && this.matchesExpenseTypeFilter(item))
+      .reduce((sum, item) => sum + Number(item.costPerKm || 0), 0);
+  }
+
+  private matchesExpenseTypeFilter(expenseType: VehicleCostPerKmExpenseTypeMetric): boolean {
+    return this.selectedExpenseTypeName === this.allExpenseTypesOption
+      || expenseType.expenseTypeName === this.selectedExpenseTypeName;
+  }
+
+  private isVariableExpense(expenseType: VehicleCostPerKmExpenseTypeMetric): boolean {
+    return Number(expenseType.costCategory || this.variableCostCategory) === this.variableCostCategory;
   }
 
   get chartOptions(): Partial<ChartOptions> {
     const vehicle = this.selectedVehicle;
     const monthlyData = this.monthLabels.map((_, index) => this.getMonthData(vehicle, index + 1));
-    const expenseTypeNames = this.expenseTypeNames;
+    const expenseTypeNames = this.filteredExpenseTypeNames;
 
     return {
       series: expenseTypeNames.map(expenseTypeName => ({
         name: expenseTypeName,
         data: monthlyData.map(item => {
-          const expenseType = (item.expenseTypes ?? []).find(current => current.expenseTypeName === expenseTypeName);
+          const expenseType = (item.expenseTypes ?? []).find(current =>
+            current.expenseTypeName === expenseTypeName && this.isVariableExpense(current)
+          );
           return Number(expenseType?.costPerKm || 0);
         })
       })),
@@ -306,7 +375,7 @@ export class ReportCostKmComponent implements OnInit {
         },
         fontFamily: 'Segoe UI, sans-serif'
       },
-      colors: expenseTypeNames.map((_, index) => this.expenseTypePalette[index % this.expenseTypePalette.length]),
+      colors: expenseTypeNames.map((expenseTypeName, index) => this.getExpenseTypeColor(expenseTypeName, index)),
       plotOptions: {
         bar: {
           borderRadius: 8,
@@ -376,7 +445,7 @@ export class ReportCostKmComponent implements OnInit {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             });
-            const expense = Number(month?.totalExpense || 0).toLocaleString('pt-BR', {
+            const expense = this.getFilteredMonthExpense(month).toLocaleString('pt-BR', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             });

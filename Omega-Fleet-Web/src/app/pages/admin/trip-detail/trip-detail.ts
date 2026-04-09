@@ -11,6 +11,7 @@ import { finalize, forkJoin } from 'rxjs';
   styleUrls: ['./trip-detail.scss']
 })
 export class TripDetailComponent implements OnInit {
+  private readonly variableCostCategory = 2;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly tripService = inject(TripService);
@@ -283,7 +284,8 @@ export class TripDetailComponent implements OnInit {
       this.loadingExpenseTypes = true;
       this.tripService.getExpenseTypes().subscribe({
         next: (res: any) => {
-          this.expenseTypes = res?.data || res?.$values || (Array.isArray(res) ? res : []);
+          const data = res?.data || res?.$values || (Array.isArray(res) ? res : []);
+          this.expenseTypes = this.filterExpenseTypesByCategory(data, this.variableCostCategory);
           this.loadingExpenseTypes = false;
           this.cdr.detectChanges();
         },
@@ -971,5 +973,11 @@ export class TripDetailComponent implements OnInit {
           this.cdr.detectChanges();
         }
       });
+  }
+
+  private filterExpenseTypesByCategory(items: any[], costCategory: number): any[] {
+    return (items || []).filter((item: any) =>
+      Number(item?.costCategory ?? item?.CostCategory ?? 2) === costCategory
+    );
   }
 }

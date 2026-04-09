@@ -24,9 +24,21 @@
     <a routerLink="/Admin/trips" routerLinkActive="active" class="nav-link">
       <span class="nav-text">Viagens</span>
     </a>
-    <a routerLink="/Admin/reports" routerLinkActive="active" class="nav-link">
-      <span class="nav-text">Relatorios</span>
-    </a>
+    <div class="nav-group" [class.expanded]="reportsExpanded">
+      <button type="button" class="nav-link nav-link-button" [class.active]="reportsExpanded" (click)="toggleReportsMenu()">
+        <span class="nav-text">Relatorios</span>
+        <span class="nav-caret">{{ reportsExpanded ? '−' : '+' }}</span>
+      </button>
+
+      <div class="nav-submenu" *ngIf="reportsExpanded">
+        <a routerLink="/Admin/reports/cost-km" routerLinkActive="active" class="nav-sublink">
+          <span class="nav-text">Custo/KM</span>
+        </a>
+        <a routerLink="/Admin/reports/profit-vehicle" routerLinkActive="active" class="nav-sublink">
+          <span class="nav-text">Lucro/Veiculo</span>
+        </a>
+      </div>
+    </div>
   </nav>
 
   <nav class="nav-menu" *ngIf="isMaster()">

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Omega.FleetManagement.Infrastructure.Data.Context;
 
@@ -11,9 +12,11 @@ using Omega.FleetManagement.Infrastructure.Data.Context;
 namespace Omega.FleetManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(FleetContext))]
-    partial class FleetContextModelSnapshot : ModelSnapshot
+    [Migration("20260409154255_AddExpenseTypeCostCategory")]
+    partial class AddExpenseTypeCostCategory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

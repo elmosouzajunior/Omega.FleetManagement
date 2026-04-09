@@ -1,6 +1,7 @@
 import { Component, OnInit, Output, EventEmitter, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-sidebar',
@@ -17,10 +18,16 @@ export class SidebarComponent implements OnInit {
   companyName = 'EMPRESA';
   userName = 'USUARIO';
   userRole = '';
+  reportsExpanded = false;
 
   ngOnInit() {
     this.loadRole();
     this.loadSidebarIdentity();
+    this.syncReportsState(this.router.url);
+
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+    ).subscribe(event => this.syncReportsState(event.urlAfterRedirects));
   }
 
   private loadRole() {
@@ -72,6 +79,14 @@ export class SidebarComponent implements OnInit {
 
   isAdmin(): boolean {
     return this.userRole === 'CompanyAdmin';
+  }
+
+  toggleReportsMenu(): void {
+    this.reportsExpanded = !this.reportsExpanded;
+  }
+
+  private syncReportsState(url: string): void {
+    this.reportsExpanded = url.startsWith('/Admin/reports');
   }
 
   onClose() {
